@@ -1,0 +1,21 @@
+type Item {
+  id: ID!
+  name: String!
+  costCents: Int!
+}
+
+type LineItem {
+  id: ID!
+  item: Item!
+  quantity: Int!
+}
+
+type Cart {
+  id: ID!
+  lineItems: [LineItem!]!
+}
+
+type Query {
+  items: [Item!]!
+  cart(id: ID!): Cart!
+}
