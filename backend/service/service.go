@@ -75,3 +75,26 @@ func (s *Service) GetCart(ctx context.Context, id uuid.UUID) (Cart, error) {
 
 	return cart, nil
 }
+
+func (s *Service) AddItemToCart(
+	ctx context.Context,
+	itemID uuid.UUID,
+	quantity int,
+	cartID uuid.UUID) (LineItem, error) {
+	// TODO: detect pre-existing items
+	lineItemEntity, err := s.client.LineItem.Create().
+		SetItemID(itemID).
+		SetCartID(cartID).
+		SetQuantity(quantity).
+		Save(ctx)
+	if err != nil {
+		return LineItem{}, fmt.Errorf("unable to create line item: %w", err)
+	}
+
+	lineItem, err := entityToLineItem(ctx, lineItemEntity)
+	if err != nil {
+		return LineItem{}, fmt.Errorf("unable to map line item: %w", err)
+	}
+
+	return lineItem, nil
+}

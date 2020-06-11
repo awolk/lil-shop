@@ -61,7 +61,8 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		NewCart func(childComplexity int) int
+		AddItemToCart func(childComplexity int, itemID string, quantity int, cartID string) int
+		NewCart       func(childComplexity int) int
 	}
 
 	Query struct {
@@ -71,7 +72,8 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	NewCart(ctx context.Context) (*model.Cart, error)
+	NewCart(ctx context.Context) (string, error)
+	AddItemToCart(ctx context.Context, itemID string, quantity int, cartID string) (string, error)
 }
 type QueryResolver interface {
 	Items(ctx context.Context) ([]*model.Item, error)
@@ -148,6 +150,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LineItem.Quantity(childComplexity), true
+
+	case "Mutation.addItemToCart":
+		if e.complexity.Mutation.AddItemToCart == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addItemToCart_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddItemToCart(childComplexity, args["itemID"].(string), args["quantity"].(int), args["cartID"].(string)), true
 
 	case "Mutation.newCart":
 		if e.complexity.Mutation.NewCart == nil {
@@ -262,7 +276,8 @@ type Query {
 }
 
 type Mutation {
-  newCart: Cart!
+  newCart: ID!
+  addItemToCart(itemID: ID!, quantity: Int!, cartID: ID!): ID!
 }
 `, BuiltIn: false},
 }
@@ -271,6 +286,36 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_addItemToCart_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["itemID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["itemID"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["quantity"]; ok {
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["quantity"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["cartID"]; ok {
+		arg2, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["cartID"] = arg2
+	return args, nil
+}
 
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -637,9 +682,50 @@ func (ec *executionContext) _Mutation_newCart(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Cart)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNCart2ᚖgithubᚗcomᚋawolkᚋlilᚑshopᚋbackendᚋgraphᚋmodelᚐCart(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_addItemToCart(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_addItemToCart_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().AddItemToCart(rctx, args["itemID"].(string), args["quantity"].(int), args["cartID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_items(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1972,6 +2058,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = graphql.MarshalString("Mutation")
 		case "newCart":
 			out.Values[i] = ec._Mutation_newCart(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "addItemToCart":
+			out.Values[i] = ec._Mutation_addItemToCart(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

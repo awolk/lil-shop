@@ -21,5 +21,8 @@ type Query {
 }
 
 type Mutation {
-  newCart: Cart!
+  # returns new cart ID
+  newCart: ID!
+  # returns line item ID
+  addItemToCart(itemID: ID!, quantity: Int!, cartID: ID!): ID!
 }
