@@ -19,3 +19,7 @@ type Query {
   items: [Item!]!
   cart(id: ID!): Cart!
 }
+
+type Mutation {
+  newCart: Cart!
+}

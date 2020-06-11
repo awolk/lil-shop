@@ -9,11 +9,21 @@ import (
 
 	"github.com/awolk/lil-shop/backend/graph/generated"
 	"github.com/awolk/lil-shop/backend/graph/model"
-	"github.com/awolk/lil-shop/backend/item"
+
+	"github.com/google/uuid"
 )
 
+func (r *mutationResolver) NewCart(ctx context.Context) (*model.Cart, error) {
+	cart, err := r.Service.NewCart(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create cart: %w", err)
+	}
+
+	return cartToModel(cart), nil
+}
+
 func (r *queryResolver) Items(ctx context.Context) ([]*model.Item, error) {
-	items, err := r.ItemService.GetItems(ctx)
+	items, err := r.Service.GetItems(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get items: %w", err)
 	}
@@ -27,25 +37,24 @@ func (r *queryResolver) Items(ctx context.Context) ([]*model.Item, error) {
 }
 
 func (r *queryResolver) Cart(ctx context.Context, id string) (*model.Cart, error) {
-	// TODO: implement
-	return &model.Cart{}, nil
+	uuid, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid UUID: %w", err)
+	}
+
+	cart, err := r.Service.GetCart(ctx, uuid)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get cart: %w", err)
+	}
+
+	return cartToModel(cart), nil
 }
+
+// Mutation returns generated.MutationResolver implementation.
+func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-func itemToModel(item item.Item) *model.Item {
-	return &model.Item{
-		ID:        item.ID.String(),
-		Name:      item.Name,
-		CostCents: item.CostCents,
-	}
-}

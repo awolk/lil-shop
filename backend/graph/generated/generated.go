@@ -35,6 +35,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Mutation() MutationResolver
 	Query() QueryResolver
 }
 
@@ -59,12 +60,19 @@ type ComplexityRoot struct {
 		Quantity func(childComplexity int) int
 	}
 
+	Mutation struct {
+		NewCart func(childComplexity int) int
+	}
+
 	Query struct {
 		Cart  func(childComplexity int, id string) int
 		Items func(childComplexity int) int
 	}
 }
 
+type MutationResolver interface {
+	NewCart(ctx context.Context) (*model.Cart, error)
+}
 type QueryResolver interface {
 	Items(ctx context.Context) ([]*model.Item, error)
 	Cart(ctx context.Context, id string) (*model.Cart, error)
@@ -141,6 +149,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LineItem.Quantity(childComplexity), true
 
+	case "Mutation.newCart":
+		if e.complexity.Mutation.NewCart == nil {
+			break
+		}
+
+		return e.complexity.Mutation.NewCart(childComplexity), true
+
 	case "Query.cart":
 		if e.complexity.Query.Cart == nil {
 			break
@@ -177,6 +192,20 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			}
 			first = false
 			data := ec._Query(ctx, rc.Operation.SelectionSet)
+			var buf bytes.Buffer
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
+		}
+	case ast.Mutation:
+		return func(ctx context.Context) *graphql.Response {
+			if !first {
+				return nil
+			}
+			first = false
+			data := ec._Mutation(ctx, rc.Operation.SelectionSet)
 			var buf bytes.Buffer
 			data.MarshalGQL(&buf)
 
@@ -230,6 +259,10 @@ type Cart {
 type Query {
   items: [Item!]!
   cart(id: ID!): Cart!
+}
+
+type Mutation {
+  newCart: Cart!
 }
 `, BuiltIn: false},
 }
@@ -573,6 +606,40 @@ func (ec *executionContext) _LineItem_quantity(ctx context.Context, field graphq
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_newCart(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().NewCart(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Cart)
+	fc.Result = res
+	return ec.marshalNCart2ᚖgithubᚗcomᚋawolkᚋlilᚑshopᚋbackendᚋgraphᚋmodelᚐCart(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_items(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1874,6 +1941,37 @@ func (ec *executionContext) _LineItem(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "quantity":
 			out.Values[i] = ec._LineItem_quantity(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var mutationImplementors = []string{"Mutation"}
+
+func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mutationImplementors)
+
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Mutation",
+	})
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Mutation")
+		case "newCart":
+			out.Values[i] = ec._Mutation_newCart(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

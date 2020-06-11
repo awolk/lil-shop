@@ -13,7 +13,7 @@ import (
 	"github.com/awolk/lil-shop/backend/ent"
 	"github.com/awolk/lil-shop/backend/graph"
 	"github.com/awolk/lil-shop/backend/graph/generated"
-	"github.com/awolk/lil-shop/backend/item"
+	"github.com/awolk/lil-shop/backend/service"
 )
 
 const defaultPort = "8080"
@@ -37,21 +37,21 @@ func main() {
 		log.Fatalf("failed creating schema resources: %v", err)
 	}
 
-	// construct services
-	itemService := item.New(client)
+	// construct service
+	service := service.New(client)
 
-	_, err = itemService.NewItem(context.Background(), "Test", 199)
+	_, err = service.NewItem(context.Background(), "Test", 199)
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, err = itemService.NewItem(context.Background(), "Test 2", 599)
+	_, err = service.NewItem(context.Background(), "Test 2", 599)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// start server
 	resolver := &graph.Resolver{
-		ItemService: itemService,
+		Service: service,
 	}
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: resolver}))
 
