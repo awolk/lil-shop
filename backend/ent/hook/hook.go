@@ -9,6 +9,19 @@ import (
 	"github.com/awolk/lil-shop/backend/ent"
 )
 
+// The CartFunc type is an adapter to allow the use of ordinary
+// function as Cart mutator.
+type CartFunc func(context.Context, *ent.CartMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CartFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.CartMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CartMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The ItemFunc type is an adapter to allow the use of ordinary
 // function as Item mutator.
 type ItemFunc func(context.Context, *ent.ItemMutation) (ent.Value, error)
@@ -18,6 +31,19 @@ func (f ItemFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	mv, ok := m.(*ent.ItemMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ItemMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The LineItemFunc type is an adapter to allow the use of ordinary
+// function as LineItem mutator.
+type LineItemFunc func(context.Context, *ent.LineItemMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f LineItemFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.LineItemMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.LineItemMutation", m)
 	}
 	return f(ctx, mv)
 }

@@ -210,6 +210,30 @@ func DenyMutationOperationRule(op ent.Op) MutationRule {
 	return OnMutationOperation(rule, op)
 }
 
+// The CartQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type CartQueryRuleFunc func(context.Context, *ent.CartQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f CartQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.CartQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.CartQuery", q)
+}
+
+// The CartMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type CartMutationRuleFunc func(context.Context, *ent.CartMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f CartMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.CartMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.CartMutation", m)
+}
+
 // The ItemQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type ItemQueryRuleFunc func(context.Context, *ent.ItemQuery) error
@@ -232,4 +256,28 @@ func (f ItemMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) 
 		return f(ctx, m)
 	}
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.ItemMutation", m)
+}
+
+// The LineItemQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type LineItemQueryRuleFunc func(context.Context, *ent.LineItemQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f LineItemQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.LineItemQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.LineItemQuery", q)
+}
+
+// The LineItemMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type LineItemMutationRuleFunc func(context.Context, *ent.LineItemMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f LineItemMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.LineItemMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.LineItemMutation", m)
 }

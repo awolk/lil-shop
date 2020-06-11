@@ -10,10 +10,13 @@ import (
 	"github.com/awolk/lil-shop/backend/ent/migrate"
 	"github.com/google/uuid"
 
+	"github.com/awolk/lil-shop/backend/ent/cart"
 	"github.com/awolk/lil-shop/backend/ent/item"
+	"github.com/awolk/lil-shop/backend/ent/lineitem"
 
 	"github.com/facebookincubator/ent/dialect"
 	"github.com/facebookincubator/ent/dialect/sql"
+	"github.com/facebookincubator/ent/dialect/sql/sqlgraph"
 )
 
 // Client is the client that holds all ent builders.
@@ -21,8 +24,12 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// Cart is the client for interacting with the Cart builders.
+	Cart *CartClient
 	// Item is the client for interacting with the Item builders.
 	Item *ItemClient
+	// LineItem is the client for interacting with the LineItem builders.
+	LineItem *LineItemClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -36,7 +43,9 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.Cart = NewCartClient(c.config)
 	c.Item = NewItemClient(c.config)
+	c.LineItem = NewLineItemClient(c.config)
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -66,8 +75,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	}
 	cfg := config{driver: tx, log: c.log, debug: c.debug, hooks: c.hooks}
 	return &Tx{
-		config: cfg,
-		Item:   NewItemClient(cfg),
+		config:   cfg,
+		Cart:     NewCartClient(cfg),
+		Item:     NewItemClient(cfg),
+		LineItem: NewLineItemClient(cfg),
 	}, nil
 }
 
@@ -82,15 +93,17 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	}
 	cfg := config{driver: &txDriver{tx: tx, drv: c.driver}, log: c.log, debug: c.debug, hooks: c.hooks}
 	return &Tx{
-		config: cfg,
-		Item:   NewItemClient(cfg),
+		config:   cfg,
+		Cart:     NewCartClient(cfg),
+		Item:     NewItemClient(cfg),
+		LineItem: NewLineItemClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Item.
+//		Cart.
 //		Query().
 //		Count(ctx)
 //
@@ -112,7 +125,108 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
+	c.Cart.Use(hooks...)
 	c.Item.Use(hooks...)
+	c.LineItem.Use(hooks...)
+}
+
+// CartClient is a client for the Cart schema.
+type CartClient struct {
+	config
+}
+
+// NewCartClient returns a client for the Cart from the given config.
+func NewCartClient(c config) *CartClient {
+	return &CartClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `cart.Hooks(f(g(h())))`.
+func (c *CartClient) Use(hooks ...Hook) {
+	c.hooks.Cart = append(c.hooks.Cart, hooks...)
+}
+
+// Create returns a create builder for Cart.
+func (c *CartClient) Create() *CartCreate {
+	mutation := newCartMutation(c.config, OpCreate)
+	return &CartCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Update returns an update builder for Cart.
+func (c *CartClient) Update() *CartUpdate {
+	mutation := newCartMutation(c.config, OpUpdate)
+	return &CartUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CartClient) UpdateOne(ca *Cart) *CartUpdateOne {
+	mutation := newCartMutation(c.config, OpUpdateOne, withCart(ca))
+	return &CartUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CartClient) UpdateOneID(id uuid.UUID) *CartUpdateOne {
+	mutation := newCartMutation(c.config, OpUpdateOne, withCartID(id))
+	return &CartUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Cart.
+func (c *CartClient) Delete() *CartDelete {
+	mutation := newCartMutation(c.config, OpDelete)
+	return &CartDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *CartClient) DeleteOne(ca *Cart) *CartDeleteOne {
+	return c.DeleteOneID(ca.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *CartClient) DeleteOneID(id uuid.UUID) *CartDeleteOne {
+	builder := c.Delete().Where(cart.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CartDeleteOne{builder}
+}
+
+// Create returns a query builder for Cart.
+func (c *CartClient) Query() *CartQuery {
+	return &CartQuery{config: c.config}
+}
+
+// Get returns a Cart entity by its id.
+func (c *CartClient) Get(ctx context.Context, id uuid.UUID) (*Cart, error) {
+	return c.Query().Where(cart.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CartClient) GetX(ctx context.Context, id uuid.UUID) *Cart {
+	ca, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return ca
+}
+
+// QueryLineItems queries the line_items edge of a Cart.
+func (c *CartClient) QueryLineItems(ca *Cart) *LineItemQuery {
+	query := &LineItemQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ca.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(cart.Table, cart.FieldID, id),
+			sqlgraph.To(lineitem.Table, lineitem.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, cart.LineItemsTable, cart.LineItemsColumn),
+		)
+		fromV = sqlgraph.Neighbors(ca.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *CartClient) Hooks() []Hook {
+	return c.hooks.Cart
 }
 
 // ItemClient is a client for the Item schema.
@@ -196,4 +310,119 @@ func (c *ItemClient) GetX(ctx context.Context, id uuid.UUID) *Item {
 // Hooks returns the client hooks.
 func (c *ItemClient) Hooks() []Hook {
 	return c.hooks.Item
+}
+
+// LineItemClient is a client for the LineItem schema.
+type LineItemClient struct {
+	config
+}
+
+// NewLineItemClient returns a client for the LineItem from the given config.
+func NewLineItemClient(c config) *LineItemClient {
+	return &LineItemClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `lineitem.Hooks(f(g(h())))`.
+func (c *LineItemClient) Use(hooks ...Hook) {
+	c.hooks.LineItem = append(c.hooks.LineItem, hooks...)
+}
+
+// Create returns a create builder for LineItem.
+func (c *LineItemClient) Create() *LineItemCreate {
+	mutation := newLineItemMutation(c.config, OpCreate)
+	return &LineItemCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Update returns an update builder for LineItem.
+func (c *LineItemClient) Update() *LineItemUpdate {
+	mutation := newLineItemMutation(c.config, OpUpdate)
+	return &LineItemUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *LineItemClient) UpdateOne(li *LineItem) *LineItemUpdateOne {
+	mutation := newLineItemMutation(c.config, OpUpdateOne, withLineItem(li))
+	return &LineItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *LineItemClient) UpdateOneID(id uuid.UUID) *LineItemUpdateOne {
+	mutation := newLineItemMutation(c.config, OpUpdateOne, withLineItemID(id))
+	return &LineItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for LineItem.
+func (c *LineItemClient) Delete() *LineItemDelete {
+	mutation := newLineItemMutation(c.config, OpDelete)
+	return &LineItemDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *LineItemClient) DeleteOne(li *LineItem) *LineItemDeleteOne {
+	return c.DeleteOneID(li.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *LineItemClient) DeleteOneID(id uuid.UUID) *LineItemDeleteOne {
+	builder := c.Delete().Where(lineitem.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &LineItemDeleteOne{builder}
+}
+
+// Create returns a query builder for LineItem.
+func (c *LineItemClient) Query() *LineItemQuery {
+	return &LineItemQuery{config: c.config}
+}
+
+// Get returns a LineItem entity by its id.
+func (c *LineItemClient) Get(ctx context.Context, id uuid.UUID) (*LineItem, error) {
+	return c.Query().Where(lineitem.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *LineItemClient) GetX(ctx context.Context, id uuid.UUID) *LineItem {
+	li, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return li
+}
+
+// QueryItem queries the item edge of a LineItem.
+func (c *LineItemClient) QueryItem(li *LineItem) *ItemQuery {
+	query := &ItemQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := li.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(lineitem.Table, lineitem.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, lineitem.ItemTable, lineitem.ItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(li.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCart queries the cart edge of a LineItem.
+func (c *LineItemClient) QueryCart(li *LineItem) *CartQuery {
+	query := &CartQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := li.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(lineitem.Table, lineitem.FieldID, id),
+			sqlgraph.To(cart.Table, cart.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, lineitem.CartTable, lineitem.CartColumn),
+		)
+		fromV = sqlgraph.Neighbors(li.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *LineItemClient) Hooks() []Hook {
+	return c.hooks.LineItem
 }

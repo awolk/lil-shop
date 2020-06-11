@@ -8,6 +8,17 @@ import (
 )
 
 var (
+	// CartsColumns holds the columns for the "carts" table.
+	CartsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+	}
+	// CartsTable holds the schema information for the "carts" table.
+	CartsTable = &schema.Table{
+		Name:        "carts",
+		Columns:     CartsColumns,
+		PrimaryKey:  []*schema.Column{CartsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{},
+	}
 	// ItemsColumns holds the columns for the "items" table.
 	ItemsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -21,11 +32,44 @@ var (
 		PrimaryKey:  []*schema.Column{ItemsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{},
 	}
+	// LineItemsColumns holds the columns for the "line_items" table.
+	LineItemsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "quantity", Type: field.TypeInt},
+		{Name: "cart_line_items", Type: field.TypeUUID, Nullable: true},
+		{Name: "line_item_item", Type: field.TypeUUID, Nullable: true},
+	}
+	// LineItemsTable holds the schema information for the "line_items" table.
+	LineItemsTable = &schema.Table{
+		Name:       "line_items",
+		Columns:    LineItemsColumns,
+		PrimaryKey: []*schema.Column{LineItemsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "line_items_carts_line_items",
+				Columns: []*schema.Column{LineItemsColumns[2]},
+
+				RefColumns: []*schema.Column{CartsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:  "line_items_items_item",
+				Columns: []*schema.Column{LineItemsColumns[3]},
+
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		CartsTable,
 		ItemsTable,
+		LineItemsTable,
 	}
 )
 
 func init() {
+	LineItemsTable.ForeignKeys[0].RefTable = CartsTable
+	LineItemsTable.ForeignKeys[1].RefTable = ItemsTable
 }

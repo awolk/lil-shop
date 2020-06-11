@@ -3,7 +3,9 @@
 package ent
 
 import (
+	"github.com/awolk/lil-shop/backend/ent/cart"
 	"github.com/awolk/lil-shop/backend/ent/item"
+	"github.com/awolk/lil-shop/backend/ent/lineitem"
 	"github.com/awolk/lil-shop/backend/ent/schema"
 	"github.com/google/uuid"
 )
@@ -12,6 +14,12 @@ import (
 // code (default values, validators or hooks) and stitches it
 // to their package variables.
 func init() {
+	cartFields := schema.Cart{}.Fields()
+	_ = cartFields
+	// cartDescID is the schema descriptor for id field.
+	cartDescID := cartFields[0].Descriptor()
+	// cart.DefaultID holds the default value on creation for the id field.
+	cart.DefaultID = cartDescID.Default.(func() uuid.UUID)
 	itemFields := schema.Item{}.Fields()
 	_ = itemFields
 	// itemDescCostCents is the schema descriptor for cost_cents field.
@@ -22,4 +30,14 @@ func init() {
 	itemDescID := itemFields[0].Descriptor()
 	// item.DefaultID holds the default value on creation for the id field.
 	item.DefaultID = itemDescID.Default.(func() uuid.UUID)
+	lineitemFields := schema.LineItem{}.Fields()
+	_ = lineitemFields
+	// lineitemDescQuantity is the schema descriptor for quantity field.
+	lineitemDescQuantity := lineitemFields[1].Descriptor()
+	// lineitem.QuantityValidator is a validator for the "quantity" field. It is called by the builders before save.
+	lineitem.QuantityValidator = lineitemDescQuantity.Validators[0].(func(int) error)
+	// lineitemDescID is the schema descriptor for id field.
+	lineitemDescID := lineitemFields[0].Descriptor()
+	// lineitem.DefaultID holds the default value on creation for the id field.
+	lineitem.DefaultID = lineitemDescID.Default.(func() uuid.UUID)
 }
