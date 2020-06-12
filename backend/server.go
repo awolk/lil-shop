@@ -16,7 +16,7 @@ import (
 	"github.com/awolk/lil-shop/backend/service"
 )
 
-const defaultPort = "8080"
+const defaultPort = "3000"
 
 func main() {
 	// load configuration
@@ -55,8 +55,8 @@ func main() {
 	}
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: resolver}))
 
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", srv)
+	http.Handle("/playground", playground.Handler("GraphQL playground", "/graphql"))
+	http.Handle("/graphql", srv)
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
