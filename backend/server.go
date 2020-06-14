@@ -40,11 +40,11 @@ func main() {
 	// construct service
 	service := service.New(client)
 
-	_, err = service.NewItem(context.Background(), "Test", 199)
+	_, err = service.NewItem(context.Background(), "Sunglasses", 1099)
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, err = service.NewItem(context.Background(), "Test 2", 599)
+	_, err = service.NewItem(context.Background(), "Apple", 199)
 	if err != nil {
 		log.Fatal(err)
 	}

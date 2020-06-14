@@ -1,0 +1,30 @@
+query allItems {
+  items {
+    id
+    name
+    costCents
+  }
+}
+
+query cart($id: ID!) {
+  cart(id: $id) {
+    id
+    lineItems {
+      id
+      quantity
+      item {
+        id
+        name
+        costCents
+      }
+    }
+  }
+}
+
+mutation addItemToCart($itemID: ID!, $quantity: Int!, $cartID: ID!) {
+  addItemToCart(itemID: $itemID, quantity: $quantity, cartID: $cartID)
+}
+
+mutation newCart {
+  newCart
+}

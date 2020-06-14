@@ -6,6 +6,8 @@ import (
 
 	"github.com/awolk/lil-shop/backend/ent"
 	"github.com/awolk/lil-shop/backend/ent/cart"
+	"github.com/awolk/lil-shop/backend/ent/item"
+	"github.com/awolk/lil-shop/backend/ent/lineitem"
 	"github.com/google/uuid"
 )
 
@@ -81,19 +83,46 @@ func (s *Service) AddItemToCart(
 	itemID uuid.UUID,
 	quantity int,
 	cartID uuid.UUID) (LineItem, error) {
-	// TODO: detect pre-existing items
-	lineItemEntity, err := s.client.LineItem.Create().
-		SetItemID(itemID).
-		SetCartID(cartID).
-		SetQuantity(quantity).
-		Save(ctx)
-	if err != nil {
-		return LineItem{}, fmt.Errorf("unable to create line item: %w", err)
-	}
 
-	lineItem, err := entityToLineItem(ctx, lineItemEntity)
+	var lineItem LineItem
+
+	err := s.withTx(ctx, func(tx *ent.Tx) error {
+		lineItemEntity, err := tx.LineItem.
+			Query().
+			WithItem().
+			Where(
+				lineitem.HasCartWith(cart.ID(cartID)),
+				lineitem.HasItemWith(item.ID(itemID)),
+			).Only(ctx)
+
+		if err != nil {
+			if ent.IsNotFound(err) {
+				lineItemEntity, err = tx.LineItem.Create().
+					SetItemID(itemID).
+					SetCartID(cartID).
+					SetQuantity(quantity).
+					Save(ctx)
+			} else {
+				return fmt.Errorf("unable to fetch line item: %w", err)
+			}
+		} else {
+			lineItemEntity, err = lineItemEntity.Update().SetQuantity(lineItemEntity.Quantity + quantity).Save(ctx)
+		}
+
+		if err != nil {
+			return fmt.Errorf("unable to create or update line item: %w", err)
+		}
+
+		lineItem, err = entityToLineItem(ctx, lineItemEntity)
+		if err != nil {
+			return fmt.Errorf("unable to map line item: %w", err)
+		}
+
+		return nil
+	})
+
 	if err != nil {
-		return LineItem{}, fmt.Errorf("unable to map line item: %w", err)
+		return LineItem{}, err
 	}
 
 	return lineItem, nil

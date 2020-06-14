@@ -1,7 +1,11 @@
-import React from "react";
+import React, { FunctionComponent } from "react";
 import { useAllItemsQuery } from "./generated/graphql";
 
-function Items() {
+interface Props {
+  onAddToCart(itemID: string): void;
+}
+
+const Items: FunctionComponent<Props> = (props) => {
   const { data, loading, error } = useAllItemsQuery();
   if (loading) {
     return <>Loading</>;
@@ -12,14 +16,21 @@ function Items() {
   }
 
   return (
-    <ul>
-      {data?.items.map((item) => (
-        <li key={item.id}>
-          {item.name}: {item.costCents}
-        </li>
-      ))}
-    </ul>
+    <>
+      Store:
+      <ul>
+        {data?.items.map((item) => (
+          <li key={item.id}>
+            {item.name}: {item.costCents / 100}
+            &nbsp;
+            <button onClick={() => props.onAddToCart(item.id)}>
+              Add to Cart
+            </button>
+          </li>
+        ))}
+      </ul>
+    </>
   );
-}
+};
 
 export default Items;
