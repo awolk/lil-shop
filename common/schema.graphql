@@ -20,9 +20,16 @@ type Query {
   cart(id: ID!): Cart!
 }
 
+type CheckOutReply {
+  clientSecret: String!
+  totalCostCents: Int!
+}
+
 type Mutation {
   # returns new cart ID
   newCart: ID!
   # returns line item ID
   addItemToCart(itemID: ID!, quantity: Int!, cartID: ID!): ID!
+  # returns payment intent client secret
+  checkoutCart(cartID: ID!): CheckOutReply!
 }

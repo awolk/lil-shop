@@ -43,16 +43,28 @@ export type QueryCartArgs = {
   id: Scalars['ID'];
 };
 
+export type CheckOutReply = {
+  __typename?: 'CheckOutReply';
+  clientSecret: Scalars['String'];
+  totalCostCents: Scalars['Int'];
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   newCart: Scalars['ID'];
   addItemToCart: Scalars['ID'];
+  checkoutCart: CheckOutReply;
 };
 
 
 export type MutationAddItemToCartArgs = {
   itemID: Scalars['ID'];
   quantity: Scalars['Int'];
+  cartID: Scalars['ID'];
+};
+
+
+export type MutationCheckoutCartArgs = {
   cartID: Scalars['ID'];
 };
 
@@ -106,6 +118,19 @@ export type NewCartMutationVariables = Exact<{ [key: string]: never; }>;
 export type NewCartMutation = (
   { __typename?: 'Mutation' }
   & Pick<Mutation, 'newCart'>
+);
+
+export type CheckoutCartMutationVariables = Exact<{
+  cartID: Scalars['ID'];
+}>;
+
+
+export type CheckoutCartMutation = (
+  { __typename?: 'Mutation' }
+  & { checkoutCart: (
+    { __typename?: 'CheckOutReply' }
+    & Pick<CheckOutReply, 'clientSecret' | 'totalCostCents'>
+  ) }
 );
 
 
@@ -246,3 +271,36 @@ export function useNewCartMutation(baseOptions?: ApolloReactHooks.MutationHookOp
 export type NewCartMutationHookResult = ReturnType<typeof useNewCartMutation>;
 export type NewCartMutationResult = ApolloReactCommon.MutationResult<NewCartMutation>;
 export type NewCartMutationOptions = ApolloReactCommon.BaseMutationOptions<NewCartMutation, NewCartMutationVariables>;
+export const CheckoutCartDocument = gql`
+    mutation checkoutCart($cartID: ID!) {
+  checkoutCart(cartID: $cartID) {
+    clientSecret
+    totalCostCents
+  }
+}
+    `;
+export type CheckoutCartMutationFn = ApolloReactCommon.MutationFunction<CheckoutCartMutation, CheckoutCartMutationVariables>;
+
+/**
+ * __useCheckoutCartMutation__
+ *
+ * To run a mutation, you first call `useCheckoutCartMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCheckoutCartMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [checkoutCartMutation, { data, loading, error }] = useCheckoutCartMutation({
+ *   variables: {
+ *      cartID: // value for 'cartID'
+ *   },
+ * });
+ */
+export function useCheckoutCartMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<CheckoutCartMutation, CheckoutCartMutationVariables>) {
+        return ApolloReactHooks.useMutation<CheckoutCartMutation, CheckoutCartMutationVariables>(CheckoutCartDocument, baseOptions);
+      }
+export type CheckoutCartMutationHookResult = ReturnType<typeof useCheckoutCartMutation>;
+export type CheckoutCartMutationResult = ApolloReactCommon.MutationResult<CheckoutCartMutation>;
+export type CheckoutCartMutationOptions = ApolloReactCommon.BaseMutationOptions<CheckoutCartMutation, CheckoutCartMutationVariables>;

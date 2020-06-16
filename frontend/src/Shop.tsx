@@ -7,6 +7,7 @@ import {
 import { ApolloError } from "apollo-boost";
 import CartView from "./CartView";
 import Items from "./Items";
+import CheckoutForm from "./CheckoutForm";
 
 export function useCart() {
   const [newCart] = useNewCartMutation();
@@ -43,9 +44,12 @@ export function useCart() {
   return { loading: true };
 }
 
+type shopState = "shopping" | "checkout";
+
 const Shop = () => {
   const { loading, error, cart, refresh } = useCart();
   const [addItemToCart] = useAddItemToCartMutation();
+  const [shopState, setShopState] = useState<shopState>("shopping");
 
   if (loading) {
     return <>Loading...</>;
@@ -60,12 +64,21 @@ const Shop = () => {
       .catch(console.error);
   };
 
-  return (
-    <>
-      <Items onAddToCart={handleAddToCart} />
-      <CartView cart={cart!} />
-    </>
-  );
+  const checkout = () => {
+    setShopState("checkout");
+  };
+
+  if (shopState === "shopping") {
+    return (
+      <>
+        <Items onAddToCart={handleAddToCart} />
+        <CartView cart={cart!} />
+        <button onClick={checkout}>Checkout</button>
+      </>
+    );
+  } else {
+    return <CheckoutForm cartID={cart!.id} />;
+  }
 };
 
 export default Shop;

@@ -28,3 +28,10 @@ mutation addItemToCart($itemID: ID!, $quantity: Int!, $cartID: ID!) {
 mutation newCart {
   newCart
 }
+
+mutation checkoutCart($cartID: ID!) {
+  checkoutCart(cartID: $cartID) {
+    clientSecret
+    totalCostCents
+  }
+}

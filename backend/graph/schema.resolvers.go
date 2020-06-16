@@ -40,6 +40,23 @@ func (r *mutationResolver) AddItemToCart(ctx context.Context, itemID string, qua
 	return lineItem.ID.String(), nil
 }
 
+func (r *mutationResolver) CheckoutCart(ctx context.Context, cartID string) (*model.CheckOutReply, error) {
+	cartUUID, err := uuid.Parse(cartID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid UUID: %w", err)
+	}
+
+	checkoutReply, err := r.Service.CheckoutCart(ctx, cartUUID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to checkout cart cart: %w", err)
+	}
+
+	return &model.CheckOutReply{
+		ClientSecret:   checkoutReply.ClientSecret,
+		TotalCostCents: checkoutReply.TotalCostCents,
+	}, nil
+}
+
 func (r *queryResolver) Items(ctx context.Context) ([]*model.Item, error) {
 	items, err := r.Service.GetItems(ctx)
 	if err != nil {

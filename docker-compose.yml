@@ -8,6 +8,8 @@ services:
       - "./frontend:/app"
       - "/app/node_modules"
     stdin_open: true
+    environment:
+      - REACT_APP_STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
   backend:
     build:
       context: ./backend
@@ -15,6 +17,8 @@ services:
     volumes:
       - "./backend:/app"
       - "/go/pkg/mod/cache"
+    environment:
+      - STRIPE_SECRET_KEY
   proxy:
     image: nginx:1.19-alpine
     volumes:

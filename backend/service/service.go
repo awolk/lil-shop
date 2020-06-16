@@ -8,16 +8,19 @@ import (
 	"github.com/awolk/lil-shop/backend/ent/cart"
 	"github.com/awolk/lil-shop/backend/ent/item"
 	"github.com/awolk/lil-shop/backend/ent/lineitem"
+	"github.com/awolk/lil-shop/backend/payments"
 	"github.com/google/uuid"
 )
 
 type Service struct {
-	client *ent.Client
+	client          *ent.Client
+	paymentsService *payments.PaymentsService
 }
 
-func New(client *ent.Client) *Service {
+func New(client *ent.Client, paymentsService *payments.PaymentsService) *Service {
 	return &Service{
-		client: client,
+		client:          client,
+		paymentsService: paymentsService,
 	}
 }
 
@@ -126,4 +129,31 @@ func (s *Service) AddItemToCart(
 	}
 
 	return lineItem, nil
+}
+
+type CheckoutReply struct {
+	TotalCostCents int
+	ClientSecret   string
+}
+
+func (s *Service) CheckoutCart(ctx context.Context, cartID uuid.UUID) (*CheckoutReply, error) {
+	cart, err := s.GetCart(ctx, cartID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch cart: %w", err)
+	}
+
+	totalCostCents := 0
+	for _, lineItem := range cart.LineItems {
+		totalCostCents += lineItem.Quantity * lineItem.Item.CostCents
+	}
+
+	clientSecret, err := s.paymentsService.NewPaymentIntent(totalCostCents)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create payment intent: %w", err)
+	}
+
+	return &CheckoutReply{
+		TotalCostCents: totalCostCents,
+		ClientSecret:   clientSecret,
+	}, nil
 }

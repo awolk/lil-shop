@@ -48,6 +48,11 @@ type ComplexityRoot struct {
 		LineItems func(childComplexity int) int
 	}
 
+	CheckOutReply struct {
+		ClientSecret   func(childComplexity int) int
+		TotalCostCents func(childComplexity int) int
+	}
+
 	Item struct {
 		CostCents func(childComplexity int) int
 		ID        func(childComplexity int) int
@@ -62,6 +67,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		AddItemToCart func(childComplexity int, itemID string, quantity int, cartID string) int
+		CheckoutCart  func(childComplexity int, cartID string) int
 		NewCart       func(childComplexity int) int
 	}
 
@@ -74,6 +80,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	NewCart(ctx context.Context) (string, error)
 	AddItemToCart(ctx context.Context, itemID string, quantity int, cartID string) (string, error)
+	CheckoutCart(ctx context.Context, cartID string) (*model.CheckOutReply, error)
 }
 type QueryResolver interface {
 	Items(ctx context.Context) ([]*model.Item, error)
@@ -108,6 +115,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Cart.LineItems(childComplexity), true
+
+	case "CheckOutReply.clientSecret":
+		if e.complexity.CheckOutReply.ClientSecret == nil {
+			break
+		}
+
+		return e.complexity.CheckOutReply.ClientSecret(childComplexity), true
+
+	case "CheckOutReply.totalCostCents":
+		if e.complexity.CheckOutReply.TotalCostCents == nil {
+			break
+		}
+
+		return e.complexity.CheckOutReply.TotalCostCents(childComplexity), true
 
 	case "Item.costCents":
 		if e.complexity.Item.CostCents == nil {
@@ -162,6 +183,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.AddItemToCart(childComplexity, args["itemID"].(string), args["quantity"].(int), args["cartID"].(string)), true
+
+	case "Mutation.checkoutCart":
+		if e.complexity.Mutation.CheckoutCart == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_checkoutCart_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CheckoutCart(childComplexity, args["cartID"].(string)), true
 
 	case "Mutation.newCart":
 		if e.complexity.Mutation.NewCart == nil {
@@ -275,9 +308,18 @@ type Query {
   cart(id: ID!): Cart!
 }
 
+type CheckOutReply {
+  clientSecret: String!
+  totalCostCents: Int!
+}
+
 type Mutation {
+  # returns new cart ID
   newCart: ID!
+  # returns line item ID
   addItemToCart(itemID: ID!, quantity: Int!, cartID: ID!): ID!
+  # returns payment intent client secret
+  checkoutCart(cartID: ID!): CheckOutReply!
 }
 `, BuiltIn: false},
 }
@@ -314,6 +356,20 @@ func (ec *executionContext) field_Mutation_addItemToCart_args(ctx context.Contex
 		}
 	}
 	args["cartID"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_checkoutCart_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["cartID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["cartID"] = arg0
 	return args, nil
 }
 
@@ -447,6 +503,74 @@ func (ec *executionContext) _Cart_lineItems(ctx context.Context, field graphql.C
 	res := resTmp.([]*model.LineItem)
 	fc.Result = res
 	return ec.marshalNLineItem2ᚕᚖgithubᚗcomᚋawolkᚋlilᚑshopᚋbackendᚋgraphᚋmodelᚐLineItemᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _CheckOutReply_clientSecret(ctx context.Context, field graphql.CollectedField, obj *model.CheckOutReply) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "CheckOutReply",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClientSecret, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _CheckOutReply_totalCostCents(ctx context.Context, field graphql.CollectedField, obj *model.CheckOutReply) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "CheckOutReply",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCostCents, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Item_id(ctx context.Context, field graphql.CollectedField, obj *model.Item) (ret graphql.Marshaler) {
@@ -726,6 +850,47 @@ func (ec *executionContext) _Mutation_addItemToCart(ctx context.Context, field g
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_checkoutCart(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_checkoutCart_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CheckoutCart(rctx, args["cartID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.CheckOutReply)
+	fc.Result = res
+	return ec.marshalNCheckOutReply2ᚖgithubᚗcomᚋawolkᚋlilᚑshopᚋbackendᚋgraphᚋmodelᚐCheckOutReply(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_items(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1967,6 +2132,38 @@ func (ec *executionContext) _Cart(ctx context.Context, sel ast.SelectionSet, obj
 	return out
 }
 
+var checkOutReplyImplementors = []string{"CheckOutReply"}
+
+func (ec *executionContext) _CheckOutReply(ctx context.Context, sel ast.SelectionSet, obj *model.CheckOutReply) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, checkOutReplyImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CheckOutReply")
+		case "clientSecret":
+			out.Values[i] = ec._CheckOutReply_clientSecret(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "totalCostCents":
+			out.Values[i] = ec._CheckOutReply_totalCostCents(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var itemImplementors = []string{"Item"}
 
 func (ec *executionContext) _Item(ctx context.Context, sel ast.SelectionSet, obj *model.Item) graphql.Marshaler {
@@ -2063,6 +2260,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "addItemToCart":
 			out.Values[i] = ec._Mutation_addItemToCart(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "checkoutCart":
+			out.Values[i] = ec._Mutation_checkoutCart(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2406,6 +2608,20 @@ func (ec *executionContext) marshalNCart2ᚖgithubᚗcomᚋawolkᚋlilᚑshopᚋ
 		return graphql.Null
 	}
 	return ec._Cart(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNCheckOutReply2githubᚗcomᚋawolkᚋlilᚑshopᚋbackendᚋgraphᚋmodelᚐCheckOutReply(ctx context.Context, sel ast.SelectionSet, v model.CheckOutReply) graphql.Marshaler {
+	return ec._CheckOutReply(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCheckOutReply2ᚖgithubᚗcomᚋawolkᚋlilᚑshopᚋbackendᚋgraphᚋmodelᚐCheckOutReply(ctx context.Context, sel ast.SelectionSet, v *model.CheckOutReply) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._CheckOutReply(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {

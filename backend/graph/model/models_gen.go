@@ -7,6 +7,11 @@ type Cart struct {
 	LineItems []*LineItem `json:"lineItems"`
 }
 
+type CheckOutReply struct {
+	ClientSecret   string `json:"clientSecret"`
+	TotalCostCents int    `json:"totalCostCents"`
+}
+
 type Item struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`

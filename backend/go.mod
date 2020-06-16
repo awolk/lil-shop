@@ -9,5 +9,6 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/mitchellh/mapstructure v1.3.2 // indirect
+	github.com/stripe/stripe-go v70.15.0+incompatible
 	github.com/vektah/gqlparser/v2 v2.0.1
 )

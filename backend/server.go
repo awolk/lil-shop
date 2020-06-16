@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -13,16 +12,15 @@ import (
 	"github.com/awolk/lil-shop/backend/ent"
 	"github.com/awolk/lil-shop/backend/graph"
 	"github.com/awolk/lil-shop/backend/graph/generated"
+	"github.com/awolk/lil-shop/backend/payments"
 	"github.com/awolk/lil-shop/backend/service"
 )
 
-const defaultPort = "3000"
-
 func main() {
 	// load configuration
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = defaultPort
+	config, err := loadConfig()
+	if err != nil {
+		log.Fatalf("failed loading configuration: %v", err)
 	}
 
 	// connect to database
@@ -37,8 +35,9 @@ func main() {
 		log.Fatalf("failed creating schema resources: %v", err)
 	}
 
-	// construct service
-	service := service.New(client)
+	// construct services
+	paymentService := payments.New(config.stripePrivateKey)
+	service := service.New(client, paymentService)
 
 	_, err = service.NewItem(context.Background(), "Sunglasses", 1099)
 	if err != nil {
@@ -58,6 +57,6 @@ func main() {
 	http.Handle("/playground", playground.Handler("GraphQL playground", "/graphql"))
 	http.Handle("/graphql", srv)
 
-	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Printf("connect to http://localhost:%s/ for GraphQL playground", config.port)
+	log.Fatal(http.ListenAndServe(":"+config.port, nil))
 }
