@@ -137,23 +137,55 @@ type CheckoutReply struct {
 }
 
 func (s *Service) CheckoutCart(ctx context.Context, cartID uuid.UUID) (*CheckoutReply, error) {
-	cart, err := s.GetCart(ctx, cartID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch cart: %w", err)
-	}
+	var pi *payments.PaymentIntent
+	var totalCostCents int
 
-	totalCostCents := 0
-	for _, lineItem := range cart.LineItems {
-		totalCostCents += lineItem.Quantity * lineItem.Item.CostCents
-	}
+	err := s.withTx(ctx, func(tx *ent.Tx) error {
+		cartEnt, err := tx.Cart.Get(ctx, cartID)
+		if err != nil {
+			return fmt.Errorf("failed to load cart: %w", err)
+		}
 
-	clientSecret, err := s.paymentsService.NewPaymentIntent(totalCostCents)
+		var cost struct {
+			Sum int `json:"sum"`
+		}
+
+		err = tx.Cart.
+			Query().
+			Where(cart.ID(cartID)).
+			WithLineItems(func(liq *ent.LineItemQuery) {
+				liq.WithItem().Select("quantity * cost_cents as line_item_cost_cents")
+			}).
+			GroupBy(cart.FieldID).
+			Aggregate(ent.Sum("line_item_cost_cents")).
+			Scan(ctx, &cost)
+		if err != nil {
+			return fmt.Errorf("failed to sum cart cost: %w", err)
+		}
+
+		totalCostCents = cost.Sum
+
+		if cartEnt.PaymentIntentID == "" {
+			// need to create new payment intent
+			pi, err = s.paymentsService.NewPaymentIntent(ctx, totalCostCents)
+		} else {
+			// need to update payment intent with new cost
+			pi, err = s.paymentsService.UpdatePaymentIntent(ctx, cartEnt.PaymentIntentID, totalCostCents)
+		}
+		if err != nil {
+			return fmt.Errorf("failed to create/update payment intent: %w", err)
+		}
+
+		cartEnt.Update().SetPaymentIntentID(pi.ID).Save(ctx)
+
+		return nil
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create payment intent: %w", err)
+		return nil, err
 	}
 
 	return &CheckoutReply{
 		TotalCostCents: totalCostCents,
-		ClientSecret:   clientSecret,
+		ClientSecret:   pi.ClientSecret,
 	}, nil
 }

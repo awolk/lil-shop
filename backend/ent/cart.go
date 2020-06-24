@@ -7,14 +7,17 @@ import (
 	"strings"
 
 	"github.com/awolk/lil-shop/backend/ent/cart"
+	"github.com/facebookincubator/ent/dialect/sql"
 	"github.com/google/uuid"
 )
 
 // Cart is the model entity for the Cart schema.
 type Cart struct {
-	config
+	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
+	// PaymentIntentID holds the value of the "payment_intent_id" field.
+	PaymentIntentID string `json:"payment_intent_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CartQuery when eager-loading is set.
 	Edges CartEdges `json:"edges"`
@@ -41,7 +44,8 @@ func (e CartEdges) LineItemsOrErr() ([]*LineItem, error) {
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Cart) scanValues() []interface{} {
 	return []interface{}{
-		&uuid.UUID{}, // id
+		&uuid.UUID{},      // id
+		&sql.NullString{}, // payment_intent_id
 	}
 }
 
@@ -57,6 +61,11 @@ func (c *Cart) assignValues(values ...interface{}) error {
 		c.ID = *value
 	}
 	values = values[1:]
+	if value, ok := values[0].(*sql.NullString); !ok {
+		return fmt.Errorf("unexpected type %T for field payment_intent_id", values[0])
+	} else if value.Valid {
+		c.PaymentIntentID = value.String
+	}
 	return nil
 }
 
@@ -88,6 +97,8 @@ func (c *Cart) String() string {
 	var builder strings.Builder
 	builder.WriteString("Cart(")
 	builder.WriteString(fmt.Sprintf("id=%v", c.ID))
+	builder.WriteString(", payment_intent_id=")
+	builder.WriteString(c.PaymentIntentID)
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -16,6 +16,7 @@ type Cart struct {
 func (Cart) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New),
+		field.String("payment_intent_id").Optional(),
 	}
 }
 

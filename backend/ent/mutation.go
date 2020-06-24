@@ -36,6 +36,7 @@ type CartMutation struct {
 	op                Op
 	typ               string
 	id                *uuid.UUID
+	payment_intent_id *string
 	clearedFields     map[string]struct{}
 	line_items        map[uuid.UUID]struct{}
 	removedline_items map[uuid.UUID]struct{}
@@ -128,6 +129,56 @@ func (m *CartMutation) ID() (id uuid.UUID, exists bool) {
 	return *m.id, true
 }
 
+// SetPaymentIntentID sets the payment_intent_id field.
+func (m *CartMutation) SetPaymentIntentID(s string) {
+	m.payment_intent_id = &s
+}
+
+// PaymentIntentID returns the payment_intent_id value in the mutation.
+func (m *CartMutation) PaymentIntentID() (r string, exists bool) {
+	v := m.payment_intent_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPaymentIntentID returns the old payment_intent_id value of the Cart.
+// If the Cart object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *CartMutation) OldPaymentIntentID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldPaymentIntentID is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldPaymentIntentID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPaymentIntentID: %w", err)
+	}
+	return oldValue.PaymentIntentID, nil
+}
+
+// ClearPaymentIntentID clears the value of payment_intent_id.
+func (m *CartMutation) ClearPaymentIntentID() {
+	m.payment_intent_id = nil
+	m.clearedFields[cart.FieldPaymentIntentID] = struct{}{}
+}
+
+// PaymentIntentIDCleared returns if the field payment_intent_id was cleared in this mutation.
+func (m *CartMutation) PaymentIntentIDCleared() bool {
+	_, ok := m.clearedFields[cart.FieldPaymentIntentID]
+	return ok
+}
+
+// ResetPaymentIntentID reset all changes of the "payment_intent_id" field.
+func (m *CartMutation) ResetPaymentIntentID() {
+	m.payment_intent_id = nil
+	delete(m.clearedFields, cart.FieldPaymentIntentID)
+}
+
 // AddLineItemIDs adds the line_items edge to LineItem by ids.
 func (m *CartMutation) AddLineItemIDs(ids ...uuid.UUID) {
 	if m.line_items == nil {
@@ -184,7 +235,10 @@ func (m *CartMutation) Type() string {
 // this mutation. Note that, in order to get all numeric
 // fields that were in/decremented, call AddedFields().
 func (m *CartMutation) Fields() []string {
-	fields := make([]string, 0, 0)
+	fields := make([]string, 0, 1)
+	if m.payment_intent_id != nil {
+		fields = append(fields, cart.FieldPaymentIntentID)
+	}
 	return fields
 }
 
@@ -192,6 +246,10 @@ func (m *CartMutation) Fields() []string {
 // The second boolean value indicates that this field was
 // not set, or was not define in the schema.
 func (m *CartMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case cart.FieldPaymentIntentID:
+		return m.PaymentIntentID()
+	}
 	return nil, false
 }
 
@@ -199,6 +257,10 @@ func (m *CartMutation) Field(name string) (ent.Value, bool) {
 // An error is returned if the mutation operation is not UpdateOne,
 // or the query to the database was failed.
 func (m *CartMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case cart.FieldPaymentIntentID:
+		return m.OldPaymentIntentID(ctx)
+	}
 	return nil, fmt.Errorf("unknown Cart field %s", name)
 }
 
@@ -207,6 +269,13 @@ func (m *CartMutation) OldField(ctx context.Context, name string) (ent.Value, er
 // type mismatch the field type.
 func (m *CartMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case cart.FieldPaymentIntentID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPaymentIntentID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Cart field %s", name)
 }
@@ -228,13 +297,19 @@ func (m *CartMutation) AddedField(name string) (ent.Value, bool) {
 // error if the field is not defined in the schema, or if the
 // type mismatch the field type.
 func (m *CartMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown Cart numeric field %s", name)
 }
 
 // ClearedFields returns all nullable fields that were cleared
 // during this mutation.
 func (m *CartMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(cart.FieldPaymentIntentID) {
+		fields = append(fields, cart.FieldPaymentIntentID)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicates if this field was
@@ -247,6 +322,11 @@ func (m *CartMutation) FieldCleared(name string) bool {
 // ClearField clears the value for the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *CartMutation) ClearField(name string) error {
+	switch name {
+	case cart.FieldPaymentIntentID:
+		m.ClearPaymentIntentID()
+		return nil
+	}
 	return fmt.Errorf("unknown Cart nullable field %s", name)
 }
 
@@ -254,6 +334,11 @@ func (m *CartMutation) ClearField(name string) error {
 // given field name. It returns an error if the field is not
 // defined in the schema.
 func (m *CartMutation) ResetField(name string) error {
+	switch name {
+	case cart.FieldPaymentIntentID:
+		m.ResetPaymentIntentID()
+		return nil
+	}
 	return fmt.Errorf("unknown Cart field %s", name)
 }
 

@@ -267,6 +267,19 @@ func (cq *CartQuery) WithLineItems(opts ...func(*LineItemQuery)) *CartQuery {
 
 // GroupBy used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
+//
+// Example:
+//
+//	var v []struct {
+//		PaymentIntentID string `json:"payment_intent_id,omitempty"`
+//		Count int `json:"count,omitempty"`
+//	}
+//
+//	client.Cart.Query().
+//		GroupBy(cart.FieldPaymentIntentID).
+//		Aggregate(ent.Count()).
+//		Scan(ctx, &v)
+//
 func (cq *CartQuery) GroupBy(field string, fields ...string) *CartGroupBy {
 	group := &CartGroupBy{config: cq.config}
 	group.fields = append([]string{field}, fields...)
@@ -280,6 +293,17 @@ func (cq *CartQuery) GroupBy(field string, fields ...string) *CartGroupBy {
 }
 
 // Select one or more fields from the given query.
+//
+// Example:
+//
+//	var v []struct {
+//		PaymentIntentID string `json:"payment_intent_id,omitempty"`
+//	}
+//
+//	client.Cart.Query().
+//		Select(cart.FieldPaymentIntentID).
+//		Scan(ctx, &v)
+//
 func (cq *CartQuery) Select(field string, fields ...string) *CartSelect {
 	selector := &CartSelect{config: cq.config}
 	selector.fields = append([]string{field}, fields...)

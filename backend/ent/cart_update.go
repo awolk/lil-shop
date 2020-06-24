@@ -29,6 +29,26 @@ func (cu *CartUpdate) Where(ps ...predicate.Cart) *CartUpdate {
 	return cu
 }
 
+// SetPaymentIntentID sets the payment_intent_id field.
+func (cu *CartUpdate) SetPaymentIntentID(s string) *CartUpdate {
+	cu.mutation.SetPaymentIntentID(s)
+	return cu
+}
+
+// SetNillablePaymentIntentID sets the payment_intent_id field if the given value is not nil.
+func (cu *CartUpdate) SetNillablePaymentIntentID(s *string) *CartUpdate {
+	if s != nil {
+		cu.SetPaymentIntentID(*s)
+	}
+	return cu
+}
+
+// ClearPaymentIntentID clears the value of payment_intent_id.
+func (cu *CartUpdate) ClearPaymentIntentID() *CartUpdate {
+	cu.mutation.ClearPaymentIntentID()
+	return cu
+}
+
 // AddLineItemIDs adds the line_items edge to LineItem by ids.
 func (cu *CartUpdate) AddLineItemIDs(ids ...uuid.UUID) *CartUpdate {
 	cu.mutation.AddLineItemIDs(ids...)
@@ -134,6 +154,19 @@ func (cu *CartUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := cu.mutation.PaymentIntentID(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: cart.FieldPaymentIntentID,
+		})
+	}
+	if cu.mutation.PaymentIntentIDCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: cart.FieldPaymentIntentID,
+		})
+	}
 	if nodes := cu.mutation.RemovedLineItemsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -188,6 +221,26 @@ type CartUpdateOne struct {
 	config
 	hooks    []Hook
 	mutation *CartMutation
+}
+
+// SetPaymentIntentID sets the payment_intent_id field.
+func (cuo *CartUpdateOne) SetPaymentIntentID(s string) *CartUpdateOne {
+	cuo.mutation.SetPaymentIntentID(s)
+	return cuo
+}
+
+// SetNillablePaymentIntentID sets the payment_intent_id field if the given value is not nil.
+func (cuo *CartUpdateOne) SetNillablePaymentIntentID(s *string) *CartUpdateOne {
+	if s != nil {
+		cuo.SetPaymentIntentID(*s)
+	}
+	return cuo
+}
+
+// ClearPaymentIntentID clears the value of payment_intent_id.
+func (cuo *CartUpdateOne) ClearPaymentIntentID() *CartUpdateOne {
+	cuo.mutation.ClearPaymentIntentID()
+	return cuo
 }
 
 // AddLineItemIDs adds the line_items edge to LineItem by ids.
@@ -293,6 +346,19 @@ func (cuo *CartUpdateOne) sqlSave(ctx context.Context) (c *Cart, err error) {
 		return nil, fmt.Errorf("missing Cart.ID for update")
 	}
 	_spec.Node.ID.Value = id
+	if value, ok := cuo.mutation.PaymentIntentID(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: cart.FieldPaymentIntentID,
+		})
+	}
+	if cuo.mutation.PaymentIntentIDCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: cart.FieldPaymentIntentID,
+		})
+	}
 	if nodes := cuo.mutation.RemovedLineItemsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,

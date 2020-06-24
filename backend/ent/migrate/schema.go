@@ -11,6 +11,7 @@ var (
 	// CartsColumns holds the columns for the "carts" table.
 	CartsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
+		{Name: "payment_intent_id", Type: field.TypeString, Nullable: true},
 	}
 	// CartsTable holds the schema information for the "carts" table.
 	CartsTable = &schema.Table{

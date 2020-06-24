@@ -92,6 +92,138 @@ func IDLTE(id uuid.UUID) predicate.Cart {
 	})
 }
 
+// PaymentIntentID applies equality check predicate on the "payment_intent_id" field. It's identical to PaymentIntentIDEQ.
+func PaymentIntentID(v string) predicate.Cart {
+	return predicate.Cart(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldPaymentIntentID), v))
+	})
+}
+
+// PaymentIntentIDEQ applies the EQ predicate on the "payment_intent_id" field.
+func PaymentIntentIDEQ(v string) predicate.Cart {
+	return predicate.Cart(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldPaymentIntentID), v))
+	})
+}
+
+// PaymentIntentIDNEQ applies the NEQ predicate on the "payment_intent_id" field.
+func PaymentIntentIDNEQ(v string) predicate.Cart {
+	return predicate.Cart(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldPaymentIntentID), v))
+	})
+}
+
+// PaymentIntentIDIn applies the In predicate on the "payment_intent_id" field.
+func PaymentIntentIDIn(vs ...string) predicate.Cart {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Cart(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldPaymentIntentID), v...))
+	})
+}
+
+// PaymentIntentIDNotIn applies the NotIn predicate on the "payment_intent_id" field.
+func PaymentIntentIDNotIn(vs ...string) predicate.Cart {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Cart(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldPaymentIntentID), v...))
+	})
+}
+
+// PaymentIntentIDGT applies the GT predicate on the "payment_intent_id" field.
+func PaymentIntentIDGT(v string) predicate.Cart {
+	return predicate.Cart(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldPaymentIntentID), v))
+	})
+}
+
+// PaymentIntentIDGTE applies the GTE predicate on the "payment_intent_id" field.
+func PaymentIntentIDGTE(v string) predicate.Cart {
+	return predicate.Cart(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldPaymentIntentID), v))
+	})
+}
+
+// PaymentIntentIDLT applies the LT predicate on the "payment_intent_id" field.
+func PaymentIntentIDLT(v string) predicate.Cart {
+	return predicate.Cart(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldPaymentIntentID), v))
+	})
+}
+
+// PaymentIntentIDLTE applies the LTE predicate on the "payment_intent_id" field.
+func PaymentIntentIDLTE(v string) predicate.Cart {
+	return predicate.Cart(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldPaymentIntentID), v))
+	})
+}
+
+// PaymentIntentIDContains applies the Contains predicate on the "payment_intent_id" field.
+func PaymentIntentIDContains(v string) predicate.Cart {
+	return predicate.Cart(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldPaymentIntentID), v))
+	})
+}
+
+// PaymentIntentIDHasPrefix applies the HasPrefix predicate on the "payment_intent_id" field.
+func PaymentIntentIDHasPrefix(v string) predicate.Cart {
+	return predicate.Cart(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldPaymentIntentID), v))
+	})
+}
+
+// PaymentIntentIDHasSuffix applies the HasSuffix predicate on the "payment_intent_id" field.
+func PaymentIntentIDHasSuffix(v string) predicate.Cart {
+	return predicate.Cart(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldPaymentIntentID), v))
+	})
+}
+
+// PaymentIntentIDIsNil applies the IsNil predicate on the "payment_intent_id" field.
+func PaymentIntentIDIsNil() predicate.Cart {
+	return predicate.Cart(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldPaymentIntentID)))
+	})
+}
+
+// PaymentIntentIDNotNil applies the NotNil predicate on the "payment_intent_id" field.
+func PaymentIntentIDNotNil() predicate.Cart {
+	return predicate.Cart(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldPaymentIntentID)))
+	})
+}
+
+// PaymentIntentIDEqualFold applies the EqualFold predicate on the "payment_intent_id" field.
+func PaymentIntentIDEqualFold(v string) predicate.Cart {
+	return predicate.Cart(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldPaymentIntentID), v))
+	})
+}
+
+// PaymentIntentIDContainsFold applies the ContainsFold predicate on the "payment_intent_id" field.
+func PaymentIntentIDContainsFold(v string) predicate.Cart {
+	return predicate.Cart(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldPaymentIntentID), v))
+	})
+}
+
 // HasLineItems applies the HasEdge predicate on the "line_items" edge.
 func HasLineItems() predicate.Cart {
 	return predicate.Cart(func(s *sql.Selector) {
