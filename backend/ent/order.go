@@ -18,6 +18,8 @@ type Order struct {
 	ID uuid.UUID `json:"id,omitempty"`
 	// PaymentIntentID holds the value of the "payment_intent_id" field.
 	PaymentIntentID string `json:"payment_intent_id,omitempty"`
+	// Completed holds the value of the "completed" field.
+	Completed bool `json:"completed,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the OrderQuery when eager-loading is set.
 	Edges OrderEdges `json:"edges"`
@@ -46,6 +48,7 @@ func (*Order) scanValues() []interface{} {
 	return []interface{}{
 		&uuid.UUID{},      // id
 		&sql.NullString{}, // payment_intent_id
+		&sql.NullBool{},   // completed
 	}
 }
 
@@ -65,6 +68,11 @@ func (o *Order) assignValues(values ...interface{}) error {
 		return fmt.Errorf("unexpected type %T for field payment_intent_id", values[0])
 	} else if value.Valid {
 		o.PaymentIntentID = value.String
+	}
+	if value, ok := values[1].(*sql.NullBool); !ok {
+		return fmt.Errorf("unexpected type %T for field completed", values[1])
+	} else if value.Valid {
+		o.Completed = value.Bool
 	}
 	return nil
 }
@@ -99,6 +107,8 @@ func (o *Order) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v", o.ID))
 	builder.WriteString(", payment_intent_id=")
 	builder.WriteString(o.PaymentIntentID)
+	builder.WriteString(", completed=")
+	builder.WriteString(fmt.Sprintf("%v", o.Completed))
 	builder.WriteByte(')')
 	return builder.String()
 }

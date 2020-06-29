@@ -35,6 +35,20 @@ func (ou *OrderUpdate) SetPaymentIntentID(s string) *OrderUpdate {
 	return ou
 }
 
+// SetCompleted sets the completed field.
+func (ou *OrderUpdate) SetCompleted(b bool) *OrderUpdate {
+	ou.mutation.SetCompleted(b)
+	return ou
+}
+
+// SetNillableCompleted sets the completed field if the given value is not nil.
+func (ou *OrderUpdate) SetNillableCompleted(b *bool) *OrderUpdate {
+	if b != nil {
+		ou.SetCompleted(*b)
+	}
+	return ou
+}
+
 // AddOrderLineItemIDs adds the order_line_items edge to OrderLineItem by ids.
 func (ou *OrderUpdate) AddOrderLineItemIDs(ids ...uuid.UUID) *OrderUpdate {
 	ou.mutation.AddOrderLineItemIDs(ids...)
@@ -147,6 +161,13 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: order.FieldPaymentIntentID,
 		})
 	}
+	if value, ok := ou.mutation.Completed(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: order.FieldCompleted,
+		})
+	}
 	if nodes := ou.mutation.RemovedOrderLineItemsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -206,6 +227,20 @@ type OrderUpdateOne struct {
 // SetPaymentIntentID sets the payment_intent_id field.
 func (ouo *OrderUpdateOne) SetPaymentIntentID(s string) *OrderUpdateOne {
 	ouo.mutation.SetPaymentIntentID(s)
+	return ouo
+}
+
+// SetCompleted sets the completed field.
+func (ouo *OrderUpdateOne) SetCompleted(b bool) *OrderUpdateOne {
+	ouo.mutation.SetCompleted(b)
+	return ouo
+}
+
+// SetNillableCompleted sets the completed field if the given value is not nil.
+func (ouo *OrderUpdateOne) SetNillableCompleted(b *bool) *OrderUpdateOne {
+	if b != nil {
+		ouo.SetCompleted(*b)
+	}
 	return ouo
 }
 
@@ -309,7 +344,7 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (o *Order, err error) {
 	}
 	id, ok := ouo.mutation.ID()
 	if !ok {
-		return nil, fmt.Errorf("missing Order.ID for update")
+		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing Order.ID for update")}
 	}
 	_spec.Node.ID.Value = id
 	if value, ok := ouo.mutation.PaymentIntentID(); ok {
@@ -317,6 +352,13 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (o *Order, err error) {
 			Type:   field.TypeString,
 			Value:  value,
 			Column: order.FieldPaymentIntentID,
+		})
+	}
+	if value, ok := ouo.mutation.Completed(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: order.FieldCompleted,
 		})
 	}
 	if nodes := ouo.mutation.RemovedOrderLineItemsIDs(); len(nodes) > 0 {

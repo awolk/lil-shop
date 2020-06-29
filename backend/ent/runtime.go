@@ -44,6 +44,10 @@ func init() {
 	lineitem.DefaultID = lineitemDescID.Default.(func() uuid.UUID)
 	orderFields := schema.Order{}.Fields()
 	_ = orderFields
+	// orderDescCompleted is the schema descriptor for completed field.
+	orderDescCompleted := orderFields[2].Descriptor()
+	// order.DefaultCompleted holds the default value on creation for the completed field.
+	order.DefaultCompleted = orderDescCompleted.Default.(bool)
 	// orderDescID is the schema descriptor for id field.
 	orderDescID := orderFields[0].Descriptor()
 	// order.DefaultID holds the default value on creation for the id field.
@@ -58,10 +62,6 @@ func init() {
 	orderlineitemDescUnitCostCents := orderlineitemFields[2].Descriptor()
 	// orderlineitem.UnitCostCentsValidator is a validator for the "unit_cost_cents" field. It is called by the builders before save.
 	orderlineitem.UnitCostCentsValidator = orderlineitemDescUnitCostCents.Validators[0].(func(int) error)
-	// orderlineitemDescCompleted is the schema descriptor for completed field.
-	orderlineitemDescCompleted := orderlineitemFields[3].Descriptor()
-	// orderlineitem.DefaultCompleted holds the default value on creation for the completed field.
-	orderlineitem.DefaultCompleted = orderlineitemDescCompleted.Default.(bool)
 	// orderlineitemDescID is the schema descriptor for id field.
 	orderlineitemDescID := orderlineitemFields[0].Descriptor()
 	// orderlineitem.DefaultID holds the default value on creation for the id field.

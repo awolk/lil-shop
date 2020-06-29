@@ -55,7 +55,7 @@ func (iu *ItemUpdate) Mutation() *ItemMutation {
 func (iu *ItemUpdate) Save(ctx context.Context) (int, error) {
 	if v, ok := iu.mutation.CostCents(); ok {
 		if err := item.CostCentsValidator(v); err != nil {
-			return 0, fmt.Errorf("ent: validator failed for field \"cost_cents\": %w", err)
+			return 0, &ValidationError{Name: "cost_cents", err: fmt.Errorf("ent: validator failed for field \"cost_cents\": %w", err)}
 		}
 	}
 	var (
@@ -192,7 +192,7 @@ func (iuo *ItemUpdateOne) Mutation() *ItemMutation {
 func (iuo *ItemUpdateOne) Save(ctx context.Context) (*Item, error) {
 	if v, ok := iuo.mutation.CostCents(); ok {
 		if err := item.CostCentsValidator(v); err != nil {
-			return nil, fmt.Errorf("ent: validator failed for field \"cost_cents\": %w", err)
+			return nil, &ValidationError{Name: "cost_cents", err: fmt.Errorf("ent: validator failed for field \"cost_cents\": %w", err)}
 		}
 	}
 	var (
@@ -257,7 +257,7 @@ func (iuo *ItemUpdateOne) sqlSave(ctx context.Context) (i *Item, err error) {
 	}
 	id, ok := iuo.mutation.ID()
 	if !ok {
-		return nil, fmt.Errorf("missing Item.ID for update")
+		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing Item.ID for update")}
 	}
 	_spec.Node.ID.Value = id
 	if value, ok := iuo.mutation.Name(); ok {

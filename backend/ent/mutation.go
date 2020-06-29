@@ -1205,6 +1205,7 @@ type OrderMutation struct {
 	typ                     string
 	id                      *uuid.UUID
 	payment_intent_id       *string
+	completed               *bool
 	clearedFields           map[string]struct{}
 	order_line_items        map[uuid.UUID]struct{}
 	removedorder_line_items map[uuid.UUID]struct{}
@@ -1334,6 +1335,43 @@ func (m *OrderMutation) ResetPaymentIntentID() {
 	m.payment_intent_id = nil
 }
 
+// SetCompleted sets the completed field.
+func (m *OrderMutation) SetCompleted(b bool) {
+	m.completed = &b
+}
+
+// Completed returns the completed value in the mutation.
+func (m *OrderMutation) Completed() (r bool, exists bool) {
+	v := m.completed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCompleted returns the old completed value of the Order.
+// If the Order object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *OrderMutation) OldCompleted(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCompleted is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCompleted requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCompleted: %w", err)
+	}
+	return oldValue.Completed, nil
+}
+
+// ResetCompleted reset all changes of the "completed" field.
+func (m *OrderMutation) ResetCompleted() {
+	m.completed = nil
+}
+
 // AddOrderLineItemIDs adds the order_line_items edge to OrderLineItem by ids.
 func (m *OrderMutation) AddOrderLineItemIDs(ids ...uuid.UUID) {
 	if m.order_line_items == nil {
@@ -1390,9 +1428,12 @@ func (m *OrderMutation) Type() string {
 // this mutation. Note that, in order to get all numeric
 // fields that were in/decremented, call AddedFields().
 func (m *OrderMutation) Fields() []string {
-	fields := make([]string, 0, 1)
+	fields := make([]string, 0, 2)
 	if m.payment_intent_id != nil {
 		fields = append(fields, order.FieldPaymentIntentID)
+	}
+	if m.completed != nil {
+		fields = append(fields, order.FieldCompleted)
 	}
 	return fields
 }
@@ -1404,6 +1445,8 @@ func (m *OrderMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case order.FieldPaymentIntentID:
 		return m.PaymentIntentID()
+	case order.FieldCompleted:
+		return m.Completed()
 	}
 	return nil, false
 }
@@ -1415,6 +1458,8 @@ func (m *OrderMutation) OldField(ctx context.Context, name string) (ent.Value, e
 	switch name {
 	case order.FieldPaymentIntentID:
 		return m.OldPaymentIntentID(ctx)
+	case order.FieldCompleted:
+		return m.OldCompleted(ctx)
 	}
 	return nil, fmt.Errorf("unknown Order field %s", name)
 }
@@ -1430,6 +1475,13 @@ func (m *OrderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPaymentIntentID(v)
+		return nil
+	case order.FieldCompleted:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCompleted(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Order field %s", name)
@@ -1483,6 +1535,9 @@ func (m *OrderMutation) ResetField(name string) error {
 	switch name {
 	case order.FieldPaymentIntentID:
 		m.ResetPaymentIntentID()
+		return nil
+	case order.FieldCompleted:
+		m.ResetCompleted()
 		return nil
 	}
 	return fmt.Errorf("unknown Order field %s", name)
@@ -1582,7 +1637,6 @@ type OrderLineItemMutation struct {
 	addquantity               *int
 	unit_cost_cents           *int
 	addunit_cost_cents        *int
-	completed                 *bool
 	clearedFields             map[string]struct{}
 	item                      *uuid.UUID
 	cleareditem               bool
@@ -1793,43 +1847,6 @@ func (m *OrderLineItemMutation) ResetUnitCostCents() {
 	m.addunit_cost_cents = nil
 }
 
-// SetCompleted sets the completed field.
-func (m *OrderLineItemMutation) SetCompleted(b bool) {
-	m.completed = &b
-}
-
-// Completed returns the completed value in the mutation.
-func (m *OrderLineItemMutation) Completed() (r bool, exists bool) {
-	v := m.completed
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCompleted returns the old completed value of the OrderLineItem.
-// If the OrderLineItem object wasn't provided to the builder, the object is fetched
-// from the database.
-// An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *OrderLineItemMutation) OldCompleted(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldCompleted is allowed only on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldCompleted requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCompleted: %w", err)
-	}
-	return oldValue.Completed, nil
-}
-
-// ResetCompleted reset all changes of the "completed" field.
-func (m *OrderLineItemMutation) ResetCompleted() {
-	m.completed = nil
-}
-
 // SetItemID sets the item edge to Item by id.
 func (m *OrderLineItemMutation) SetItemID(id uuid.UUID) {
 	m.item = &id
@@ -1961,15 +1978,12 @@ func (m *OrderLineItemMutation) Type() string {
 // this mutation. Note that, in order to get all numeric
 // fields that were in/decremented, call AddedFields().
 func (m *OrderLineItemMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 2)
 	if m.quantity != nil {
 		fields = append(fields, orderlineitem.FieldQuantity)
 	}
 	if m.unit_cost_cents != nil {
 		fields = append(fields, orderlineitem.FieldUnitCostCents)
-	}
-	if m.completed != nil {
-		fields = append(fields, orderlineitem.FieldCompleted)
 	}
 	return fields
 }
@@ -1983,8 +1997,6 @@ func (m *OrderLineItemMutation) Field(name string) (ent.Value, bool) {
 		return m.Quantity()
 	case orderlineitem.FieldUnitCostCents:
 		return m.UnitCostCents()
-	case orderlineitem.FieldCompleted:
-		return m.Completed()
 	}
 	return nil, false
 }
@@ -1998,8 +2010,6 @@ func (m *OrderLineItemMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldQuantity(ctx)
 	case orderlineitem.FieldUnitCostCents:
 		return m.OldUnitCostCents(ctx)
-	case orderlineitem.FieldCompleted:
-		return m.OldCompleted(ctx)
 	}
 	return nil, fmt.Errorf("unknown OrderLineItem field %s", name)
 }
@@ -2022,13 +2032,6 @@ func (m *OrderLineItemMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUnitCostCents(v)
-		return nil
-	case orderlineitem.FieldCompleted:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCompleted(v)
 		return nil
 	}
 	return fmt.Errorf("unknown OrderLineItem field %s", name)
@@ -2112,9 +2115,6 @@ func (m *OrderLineItemMutation) ResetField(name string) error {
 		return nil
 	case orderlineitem.FieldUnitCostCents:
 		m.ResetUnitCostCents()
-		return nil
-	case orderlineitem.FieldCompleted:
-		m.ResetCompleted()
 		return nil
 	}
 	return fmt.Errorf("unknown OrderLineItem field %s", name)

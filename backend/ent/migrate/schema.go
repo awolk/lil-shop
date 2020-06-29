@@ -65,6 +65,7 @@ var (
 	OrdersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "payment_intent_id", Type: field.TypeString},
+		{Name: "completed", Type: field.TypeBool},
 	}
 	// OrdersTable holds the schema information for the "orders" table.
 	OrdersTable = &schema.Table{
@@ -78,7 +79,6 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "quantity", Type: field.TypeInt},
 		{Name: "unit_cost_cents", Type: field.TypeInt},
-		{Name: "completed", Type: field.TypeBool},
 		{Name: "order_order_line_items", Type: field.TypeUUID, Nullable: true},
 		{Name: "order_line_item_item", Type: field.TypeUUID, Nullable: true},
 		{Name: "order_line_item_original_line_item", Type: field.TypeUUID, Nullable: true},
@@ -91,21 +91,21 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:  "order_line_items_orders_order_line_items",
-				Columns: []*schema.Column{OrderLineItemsColumns[4]},
+				Columns: []*schema.Column{OrderLineItemsColumns[3]},
 
 				RefColumns: []*schema.Column{OrdersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:  "order_line_items_items_item",
-				Columns: []*schema.Column{OrderLineItemsColumns[5]},
+				Columns: []*schema.Column{OrderLineItemsColumns[4]},
 
 				RefColumns: []*schema.Column{ItemsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:  "order_line_items_line_items_original_line_item",
-				Columns: []*schema.Column{OrderLineItemsColumns[6]},
+				Columns: []*schema.Column{OrderLineItemsColumns[5]},
 
 				RefColumns: []*schema.Column{LineItemsColumns[0]},
 				OnDelete:   schema.SetNull,

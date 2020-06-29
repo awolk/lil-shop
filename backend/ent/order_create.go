@@ -27,6 +27,20 @@ func (oc *OrderCreate) SetPaymentIntentID(s string) *OrderCreate {
 	return oc
 }
 
+// SetCompleted sets the completed field.
+func (oc *OrderCreate) SetCompleted(b bool) *OrderCreate {
+	oc.mutation.SetCompleted(b)
+	return oc
+}
+
+// SetNillableCompleted sets the completed field if the given value is not nil.
+func (oc *OrderCreate) SetNillableCompleted(b *bool) *OrderCreate {
+	if b != nil {
+		oc.SetCompleted(*b)
+	}
+	return oc
+}
+
 // SetID sets the id field.
 func (oc *OrderCreate) SetID(u uuid.UUID) *OrderCreate {
 	oc.mutation.SetID(u)
@@ -56,7 +70,11 @@ func (oc *OrderCreate) Mutation() *OrderMutation {
 // Save creates the Order in the database.
 func (oc *OrderCreate) Save(ctx context.Context) (*Order, error) {
 	if _, ok := oc.mutation.PaymentIntentID(); !ok {
-		return nil, errors.New("ent: missing required field \"payment_intent_id\"")
+		return nil, &ValidationError{Name: "payment_intent_id", err: errors.New("ent: missing required field \"payment_intent_id\"")}
+	}
+	if _, ok := oc.mutation.Completed(); !ok {
+		v := order.DefaultCompleted
+		oc.mutation.SetCompleted(v)
 	}
 	if _, ok := oc.mutation.ID(); !ok {
 		v := order.DefaultID()
@@ -120,6 +138,14 @@ func (oc *OrderCreate) sqlSave(ctx context.Context) (*Order, error) {
 			Column: order.FieldPaymentIntentID,
 		})
 		o.PaymentIntentID = value
+	}
+	if value, ok := oc.mutation.Completed(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: order.FieldCompleted,
+		})
+		o.Completed = value
 	}
 	if nodes := oc.mutation.OrderLineItemsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

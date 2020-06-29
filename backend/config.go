@@ -6,8 +6,9 @@ import (
 )
 
 type config struct {
-	stripePrivateKey string
-	port             string
+	stripePrivateKey     string
+	stripeEndpointSecret string
+	port                 string
 }
 
 func loadConfig() (*config, error) {
@@ -16,8 +17,14 @@ func loadConfig() (*config, error) {
 		return nil, fmt.Errorf("STRIPE_SECRET_KEY unset")
 	}
 
+	stripeEndpointSecret := os.Getenv("STRIPE_ENDPOINT_SECRET")
+	if stripeEndpointSecret == "" {
+		return nil, fmt.Errorf("STRIPE_ENDPOINT_SECRET unset")
+	}
+
 	return &config{
-		stripePrivateKey: stripePrivateKey,
-		port:             "3000",
+		stripePrivateKey:     stripePrivateKey,
+		stripeEndpointSecret: stripeEndpointSecret,
+		port:                 "3000",
 	}, nil
 }

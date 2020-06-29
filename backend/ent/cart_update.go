@@ -290,7 +290,7 @@ func (cuo *CartUpdateOne) sqlSave(ctx context.Context) (c *Cart, err error) {
 	}
 	id, ok := cuo.mutation.ID()
 	if !ok {
-		return nil, fmt.Errorf("missing Cart.ID for update")
+		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing Cart.ID for update")}
 	}
 	_spec.Node.ID.Value = id
 	if nodes := cuo.mutation.RemovedLineItemsIDs(); len(nodes) > 0 {

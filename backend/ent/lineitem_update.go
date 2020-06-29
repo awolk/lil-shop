@@ -87,7 +87,7 @@ func (liu *LineItemUpdate) ClearCart() *LineItemUpdate {
 func (liu *LineItemUpdate) Save(ctx context.Context) (int, error) {
 	if v, ok := liu.mutation.Quantity(); ok {
 		if err := lineitem.QuantityValidator(v); err != nil {
-			return 0, fmt.Errorf("ent: validator failed for field \"quantity\": %w", err)
+			return 0, &ValidationError{Name: "quantity", err: fmt.Errorf("ent: validator failed for field \"quantity\": %w", err)}
 		}
 	}
 
@@ -323,7 +323,7 @@ func (liuo *LineItemUpdateOne) ClearCart() *LineItemUpdateOne {
 func (liuo *LineItemUpdateOne) Save(ctx context.Context) (*LineItem, error) {
 	if v, ok := liuo.mutation.Quantity(); ok {
 		if err := lineitem.QuantityValidator(v); err != nil {
-			return nil, fmt.Errorf("ent: validator failed for field \"quantity\": %w", err)
+			return nil, &ValidationError{Name: "quantity", err: fmt.Errorf("ent: validator failed for field \"quantity\": %w", err)}
 		}
 	}
 
@@ -396,7 +396,7 @@ func (liuo *LineItemUpdateOne) sqlSave(ctx context.Context) (li *LineItem, err e
 	}
 	id, ok := liuo.mutation.ID()
 	if !ok {
-		return nil, fmt.Errorf("missing LineItem.ID for update")
+		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing LineItem.ID for update")}
 	}
 	_spec.Node.ID.Value = id
 	if value, ok := liuo.mutation.Quantity(); ok {

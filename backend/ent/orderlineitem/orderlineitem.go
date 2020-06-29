@@ -15,8 +15,6 @@ const (
 	FieldQuantity = "quantity"
 	// FieldUnitCostCents holds the string denoting the unit_cost_cents field in the database.
 	FieldUnitCostCents = "unit_cost_cents"
-	// FieldCompleted holds the string denoting the completed field in the database.
-	FieldCompleted = "completed"
 
 	// EdgeItem holds the string denoting the item edge name in mutations.
 	EdgeItem = "item"
@@ -55,7 +53,6 @@ var Columns = []string{
 	FieldID,
 	FieldQuantity,
 	FieldUnitCostCents,
-	FieldCompleted,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the OrderLineItem type.
@@ -70,8 +67,6 @@ var (
 	QuantityValidator func(int) error
 	// UnitCostCentsValidator is a validator for the "unit_cost_cents" field. It is called by the builders before save.
 	UnitCostCentsValidator func(int) error
-	// DefaultCompleted holds the default value on creation for the completed field.
-	DefaultCompleted bool
 	// DefaultID holds the default value on creation for the id field.
 	DefaultID func() uuid.UUID
 )

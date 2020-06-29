@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/99designs/gqlgen v0.11.3
-	github.com/facebookincubator/ent v0.2.3
+	github.com/facebookincubator/ent v0.2.5
 	github.com/google/uuid v1.1.1
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible

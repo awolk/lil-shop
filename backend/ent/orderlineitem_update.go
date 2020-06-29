@@ -58,20 +58,6 @@ func (oliu *OrderLineItemUpdate) AddUnitCostCents(i int) *OrderLineItemUpdate {
 	return oliu
 }
 
-// SetCompleted sets the completed field.
-func (oliu *OrderLineItemUpdate) SetCompleted(b bool) *OrderLineItemUpdate {
-	oliu.mutation.SetCompleted(b)
-	return oliu
-}
-
-// SetNillableCompleted sets the completed field if the given value is not nil.
-func (oliu *OrderLineItemUpdate) SetNillableCompleted(b *bool) *OrderLineItemUpdate {
-	if b != nil {
-		oliu.SetCompleted(*b)
-	}
-	return oliu
-}
-
 // SetItemID sets the item edge to Item by id.
 func (oliu *OrderLineItemUpdate) SetItemID(id uuid.UUID) *OrderLineItemUpdate {
 	oliu.mutation.SetItemID(id)
@@ -140,12 +126,12 @@ func (oliu *OrderLineItemUpdate) ClearOriginalLineItem() *OrderLineItemUpdate {
 func (oliu *OrderLineItemUpdate) Save(ctx context.Context) (int, error) {
 	if v, ok := oliu.mutation.Quantity(); ok {
 		if err := orderlineitem.QuantityValidator(v); err != nil {
-			return 0, fmt.Errorf("ent: validator failed for field \"quantity\": %w", err)
+			return 0, &ValidationError{Name: "quantity", err: fmt.Errorf("ent: validator failed for field \"quantity\": %w", err)}
 		}
 	}
 	if v, ok := oliu.mutation.UnitCostCents(); ok {
 		if err := orderlineitem.UnitCostCentsValidator(v); err != nil {
-			return 0, fmt.Errorf("ent: validator failed for field \"unit_cost_cents\": %w", err)
+			return 0, &ValidationError{Name: "unit_cost_cents", err: fmt.Errorf("ent: validator failed for field \"unit_cost_cents\": %w", err)}
 		}
 	}
 
@@ -250,13 +236,6 @@ func (oliu *OrderLineItemUpdate) sqlSave(ctx context.Context) (n int, err error)
 			Type:   field.TypeInt,
 			Value:  value,
 			Column: orderlineitem.FieldUnitCostCents,
-		})
-	}
-	if value, ok := oliu.mutation.Completed(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: orderlineitem.FieldCompleted,
 		})
 	}
 	if oliu.mutation.ItemCleared() {
@@ -408,20 +387,6 @@ func (oliuo *OrderLineItemUpdateOne) AddUnitCostCents(i int) *OrderLineItemUpdat
 	return oliuo
 }
 
-// SetCompleted sets the completed field.
-func (oliuo *OrderLineItemUpdateOne) SetCompleted(b bool) *OrderLineItemUpdateOne {
-	oliuo.mutation.SetCompleted(b)
-	return oliuo
-}
-
-// SetNillableCompleted sets the completed field if the given value is not nil.
-func (oliuo *OrderLineItemUpdateOne) SetNillableCompleted(b *bool) *OrderLineItemUpdateOne {
-	if b != nil {
-		oliuo.SetCompleted(*b)
-	}
-	return oliuo
-}
-
 // SetItemID sets the item edge to Item by id.
 func (oliuo *OrderLineItemUpdateOne) SetItemID(id uuid.UUID) *OrderLineItemUpdateOne {
 	oliuo.mutation.SetItemID(id)
@@ -490,12 +455,12 @@ func (oliuo *OrderLineItemUpdateOne) ClearOriginalLineItem() *OrderLineItemUpdat
 func (oliuo *OrderLineItemUpdateOne) Save(ctx context.Context) (*OrderLineItem, error) {
 	if v, ok := oliuo.mutation.Quantity(); ok {
 		if err := orderlineitem.QuantityValidator(v); err != nil {
-			return nil, fmt.Errorf("ent: validator failed for field \"quantity\": %w", err)
+			return nil, &ValidationError{Name: "quantity", err: fmt.Errorf("ent: validator failed for field \"quantity\": %w", err)}
 		}
 	}
 	if v, ok := oliuo.mutation.UnitCostCents(); ok {
 		if err := orderlineitem.UnitCostCentsValidator(v); err != nil {
-			return nil, fmt.Errorf("ent: validator failed for field \"unit_cost_cents\": %w", err)
+			return nil, &ValidationError{Name: "unit_cost_cents", err: fmt.Errorf("ent: validator failed for field \"unit_cost_cents\": %w", err)}
 		}
 	}
 
@@ -569,7 +534,7 @@ func (oliuo *OrderLineItemUpdateOne) sqlSave(ctx context.Context) (oli *OrderLin
 	}
 	id, ok := oliuo.mutation.ID()
 	if !ok {
-		return nil, fmt.Errorf("missing OrderLineItem.ID for update")
+		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing OrderLineItem.ID for update")}
 	}
 	_spec.Node.ID.Value = id
 	if value, ok := oliuo.mutation.Quantity(); ok {
@@ -598,13 +563,6 @@ func (oliuo *OrderLineItemUpdateOne) sqlSave(ctx context.Context) (oli *OrderLin
 			Type:   field.TypeInt,
 			Value:  value,
 			Column: orderlineitem.FieldUnitCostCents,
-		})
-	}
-	if value, ok := oliuo.mutation.Completed(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: orderlineitem.FieldCompleted,
 		})
 	}
 	if oliuo.mutation.ItemCleared() {

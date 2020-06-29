@@ -13,6 +13,8 @@ const (
 	FieldID = "id"
 	// FieldPaymentIntentID holds the string denoting the payment_intent_id field in the database.
 	FieldPaymentIntentID = "payment_intent_id"
+	// FieldCompleted holds the string denoting the completed field in the database.
+	FieldCompleted = "completed"
 
 	// EdgeOrderLineItems holds the string denoting the order_line_items edge name in mutations.
 	EdgeOrderLineItems = "order_line_items"
@@ -32,9 +34,12 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldPaymentIntentID,
+	FieldCompleted,
 }
 
 var (
+	// DefaultCompleted holds the default value on creation for the completed field.
+	DefaultCompleted bool
 	// DefaultID holds the default value on creation for the id field.
 	DefaultID func() uuid.UUID
 )

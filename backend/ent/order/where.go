@@ -99,6 +99,13 @@ func PaymentIntentID(v string) predicate.Order {
 	})
 }
 
+// Completed applies equality check predicate on the "completed" field. It's identical to CompletedEQ.
+func Completed(v bool) predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldCompleted), v))
+	})
+}
+
 // PaymentIntentIDEQ applies the EQ predicate on the "payment_intent_id" field.
 func PaymentIntentIDEQ(v string) predicate.Order {
 	return predicate.Order(func(s *sql.Selector) {
@@ -207,6 +214,20 @@ func PaymentIntentIDEqualFold(v string) predicate.Order {
 func PaymentIntentIDContainsFold(v string) predicate.Order {
 	return predicate.Order(func(s *sql.Selector) {
 		s.Where(sql.ContainsFold(s.C(FieldPaymentIntentID), v))
+	})
+}
+
+// CompletedEQ applies the EQ predicate on the "completed" field.
+func CompletedEQ(v bool) predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldCompleted), v))
+	})
+}
+
+// CompletedNEQ applies the NEQ predicate on the "completed" field.
+func CompletedNEQ(v bool) predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldCompleted), v))
 	})
 }
 

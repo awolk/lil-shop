@@ -23,8 +23,6 @@ type OrderLineItem struct {
 	Quantity int `json:"quantity,omitempty"`
 	// UnitCostCents holds the value of the "unit_cost_cents" field.
 	UnitCostCents int `json:"unit_cost_cents,omitempty"`
-	// Completed holds the value of the "completed" field.
-	Completed bool `json:"completed,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the OrderLineItemQuery when eager-loading is set.
 	Edges                              OrderLineItemEdges `json:"edges"`
@@ -94,7 +92,6 @@ func (*OrderLineItem) scanValues() []interface{} {
 		&uuid.UUID{},     // id
 		&sql.NullInt64{}, // quantity
 		&sql.NullInt64{}, // unit_cost_cents
-		&sql.NullBool{},  // completed
 	}
 }
 
@@ -129,12 +126,7 @@ func (oli *OrderLineItem) assignValues(values ...interface{}) error {
 	} else if value.Valid {
 		oli.UnitCostCents = int(value.Int64)
 	}
-	if value, ok := values[2].(*sql.NullBool); !ok {
-		return fmt.Errorf("unexpected type %T for field completed", values[2])
-	} else if value.Valid {
-		oli.Completed = value.Bool
-	}
-	values = values[3:]
+	values = values[2:]
 	if len(values) == len(orderlineitem.ForeignKeys) {
 		if value, ok := values[0].(*uuid.UUID); !ok {
 			return fmt.Errorf("unexpected type %T for field order_order_line_items", values[0])
@@ -197,8 +189,6 @@ func (oli *OrderLineItem) String() string {
 	builder.WriteString(fmt.Sprintf("%v", oli.Quantity))
 	builder.WriteString(", unit_cost_cents=")
 	builder.WriteString(fmt.Sprintf("%v", oli.UnitCostCents))
-	builder.WriteString(", completed=")
-	builder.WriteString(fmt.Sprintf("%v", oli.Completed))
 	builder.WriteByte(')')
 	return builder.String()
 }

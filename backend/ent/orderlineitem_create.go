@@ -35,20 +35,6 @@ func (olic *OrderLineItemCreate) SetUnitCostCents(i int) *OrderLineItemCreate {
 	return olic
 }
 
-// SetCompleted sets the completed field.
-func (olic *OrderLineItemCreate) SetCompleted(b bool) *OrderLineItemCreate {
-	olic.mutation.SetCompleted(b)
-	return olic
-}
-
-// SetNillableCompleted sets the completed field if the given value is not nil.
-func (olic *OrderLineItemCreate) SetNillableCompleted(b *bool) *OrderLineItemCreate {
-	if b != nil {
-		olic.SetCompleted(*b)
-	}
-	return olic
-}
-
 // SetID sets the id field.
 func (olic *OrderLineItemCreate) SetID(u uuid.UUID) *OrderLineItemCreate {
 	olic.mutation.SetID(u)
@@ -104,34 +90,30 @@ func (olic *OrderLineItemCreate) Mutation() *OrderLineItemMutation {
 // Save creates the OrderLineItem in the database.
 func (olic *OrderLineItemCreate) Save(ctx context.Context) (*OrderLineItem, error) {
 	if _, ok := olic.mutation.Quantity(); !ok {
-		return nil, errors.New("ent: missing required field \"quantity\"")
+		return nil, &ValidationError{Name: "quantity", err: errors.New("ent: missing required field \"quantity\"")}
 	}
 	if v, ok := olic.mutation.Quantity(); ok {
 		if err := orderlineitem.QuantityValidator(v); err != nil {
-			return nil, fmt.Errorf("ent: validator failed for field \"quantity\": %w", err)
+			return nil, &ValidationError{Name: "quantity", err: fmt.Errorf("ent: validator failed for field \"quantity\": %w", err)}
 		}
 	}
 	if _, ok := olic.mutation.UnitCostCents(); !ok {
-		return nil, errors.New("ent: missing required field \"unit_cost_cents\"")
+		return nil, &ValidationError{Name: "unit_cost_cents", err: errors.New("ent: missing required field \"unit_cost_cents\"")}
 	}
 	if v, ok := olic.mutation.UnitCostCents(); ok {
 		if err := orderlineitem.UnitCostCentsValidator(v); err != nil {
-			return nil, fmt.Errorf("ent: validator failed for field \"unit_cost_cents\": %w", err)
+			return nil, &ValidationError{Name: "unit_cost_cents", err: fmt.Errorf("ent: validator failed for field \"unit_cost_cents\": %w", err)}
 		}
-	}
-	if _, ok := olic.mutation.Completed(); !ok {
-		v := orderlineitem.DefaultCompleted
-		olic.mutation.SetCompleted(v)
 	}
 	if _, ok := olic.mutation.ID(); !ok {
 		v := orderlineitem.DefaultID()
 		olic.mutation.SetID(v)
 	}
 	if _, ok := olic.mutation.ItemID(); !ok {
-		return nil, errors.New("ent: missing required edge \"item\"")
+		return nil, &ValidationError{Name: "item", err: errors.New("ent: missing required edge \"item\"")}
 	}
 	if _, ok := olic.mutation.OrderID(); !ok {
-		return nil, errors.New("ent: missing required edge \"order\"")
+		return nil, &ValidationError{Name: "order", err: errors.New("ent: missing required edge \"order\"")}
 	}
 	var (
 		err  error
@@ -199,14 +181,6 @@ func (olic *OrderLineItemCreate) sqlSave(ctx context.Context) (*OrderLineItem, e
 			Column: orderlineitem.FieldUnitCostCents,
 		})
 		oli.UnitCostCents = value
-	}
-	if value, ok := olic.mutation.Completed(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeBool,
-			Value:  value,
-			Column: orderlineitem.FieldCompleted,
-		})
-		oli.Completed = value
 	}
 	if nodes := olic.mutation.ItemIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

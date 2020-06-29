@@ -8,6 +8,7 @@ import (
 	"github.com/awolk/lil-shop/backend/ent/cart"
 	"github.com/awolk/lil-shop/backend/ent/item"
 	"github.com/awolk/lil-shop/backend/ent/lineitem"
+	"github.com/awolk/lil-shop/backend/ent/order"
 	"github.com/awolk/lil-shop/backend/graph/model"
 	"github.com/awolk/lil-shop/backend/payments"
 	"github.com/google/uuid"
@@ -234,4 +235,38 @@ func (s *Service) CheckoutCart(ctx context.Context, cartID uuid.UUID) (*model.Or
 	}
 
 	return res, err
+}
+
+// CompleteOrder marks an order as completed and removes the associated line
+// items from the previous cart
+func (s *Service) CompleteOrder(ctx context.Context, paymentIntentID string) error {
+	return s.withTx(ctx, func(ctx context.Context) error {
+		client := s.client(ctx)
+		order, err := client.Order.Query().Where(order.PaymentIntentID(paymentIntentID)).WithOrderLineItems().Only(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to find order associated with payment intent ID: %w", err)
+		}
+
+		_, err = order.Update().SetCompleted(true).Save(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to find order associated with payment intent ID: %w", err)
+		}
+
+		for _, orderLineItem := range order.Edges.OrderLineItems {
+			lineItem, err := orderLineItem.QueryOriginalLineItem().Only(ctx)
+			if err != nil {
+				if ent.IsNotFound(err) {
+					continue
+				}
+				return fmt.Errorf("failed to find old cart line item id: %w", err)
+			}
+
+			err = client.LineItem.DeleteOne(lineItem).Exec(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to delete old cart line item: %w", err)
+			}
+		}
+
+		return nil
+	})
 }

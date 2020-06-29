@@ -46,14 +46,14 @@ func (ic *ItemCreate) Mutation() *ItemMutation {
 // Save creates the Item in the database.
 func (ic *ItemCreate) Save(ctx context.Context) (*Item, error) {
 	if _, ok := ic.mutation.Name(); !ok {
-		return nil, errors.New("ent: missing required field \"name\"")
+		return nil, &ValidationError{Name: "name", err: errors.New("ent: missing required field \"name\"")}
 	}
 	if _, ok := ic.mutation.CostCents(); !ok {
-		return nil, errors.New("ent: missing required field \"cost_cents\"")
+		return nil, &ValidationError{Name: "cost_cents", err: errors.New("ent: missing required field \"cost_cents\"")}
 	}
 	if v, ok := ic.mutation.CostCents(); ok {
 		if err := item.CostCentsValidator(v); err != nil {
-			return nil, fmt.Errorf("ent: validator failed for field \"cost_cents\": %w", err)
+			return nil, &ValidationError{Name: "cost_cents", err: fmt.Errorf("ent: validator failed for field \"cost_cents\": %w", err)}
 		}
 	}
 	if _, ok := ic.mutation.ID(); !ok {

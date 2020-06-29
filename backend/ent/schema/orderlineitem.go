@@ -18,7 +18,6 @@ func (OrderLineItem) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).Default(uuid.New),
 		field.Int("quantity").Positive(),
 		field.Int("unit_cost_cents").Positive(),
-		field.Bool("completed").Default(false),
 	}
 }
 

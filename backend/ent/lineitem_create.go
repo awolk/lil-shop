@@ -64,11 +64,11 @@ func (lic *LineItemCreate) Mutation() *LineItemMutation {
 // Save creates the LineItem in the database.
 func (lic *LineItemCreate) Save(ctx context.Context) (*LineItem, error) {
 	if _, ok := lic.mutation.Quantity(); !ok {
-		return nil, errors.New("ent: missing required field \"quantity\"")
+		return nil, &ValidationError{Name: "quantity", err: errors.New("ent: missing required field \"quantity\"")}
 	}
 	if v, ok := lic.mutation.Quantity(); ok {
 		if err := lineitem.QuantityValidator(v); err != nil {
-			return nil, fmt.Errorf("ent: validator failed for field \"quantity\": %w", err)
+			return nil, &ValidationError{Name: "quantity", err: fmt.Errorf("ent: validator failed for field \"quantity\": %w", err)}
 		}
 	}
 	if _, ok := lic.mutation.ID(); !ok {
@@ -76,10 +76,10 @@ func (lic *LineItemCreate) Save(ctx context.Context) (*LineItem, error) {
 		lic.mutation.SetID(v)
 	}
 	if _, ok := lic.mutation.ItemID(); !ok {
-		return nil, errors.New("ent: missing required edge \"item\"")
+		return nil, &ValidationError{Name: "item", err: errors.New("ent: missing required edge \"item\"")}
 	}
 	if _, ok := lic.mutation.CartID(); !ok {
-		return nil, errors.New("ent: missing required edge \"cart\"")
+		return nil, &ValidationError{Name: "cart", err: errors.New("ent: missing required edge \"cart\"")}
 	}
 	var (
 		err  error

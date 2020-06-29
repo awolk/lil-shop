@@ -106,13 +106,6 @@ func UnitCostCents(v int) predicate.OrderLineItem {
 	})
 }
 
-// Completed applies equality check predicate on the "completed" field. It's identical to CompletedEQ.
-func Completed(v bool) predicate.OrderLineItem {
-	return predicate.OrderLineItem(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCompleted), v))
-	})
-}
-
 // QuantityEQ applies the EQ predicate on the "quantity" field.
 func QuantityEQ(v int) predicate.OrderLineItem {
 	return predicate.OrderLineItem(func(s *sql.Selector) {
@@ -262,20 +255,6 @@ func UnitCostCentsLT(v int) predicate.OrderLineItem {
 func UnitCostCentsLTE(v int) predicate.OrderLineItem {
 	return predicate.OrderLineItem(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldUnitCostCents), v))
-	})
-}
-
-// CompletedEQ applies the EQ predicate on the "completed" field.
-func CompletedEQ(v bool) predicate.OrderLineItem {
-	return predicate.OrderLineItem(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCompleted), v))
-	})
-}
-
-// CompletedNEQ applies the NEQ predicate on the "completed" field.
-func CompletedNEQ(v bool) predicate.OrderLineItem {
-	return predicate.OrderLineItem(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldCompleted), v))
 	})
 }
 
