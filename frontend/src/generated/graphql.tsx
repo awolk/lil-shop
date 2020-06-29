@@ -32,6 +32,22 @@ export type Cart = {
   lineItems: Array<LineItem>;
 };
 
+export type OrderLineItem = {
+  __typename?: 'OrderLineItem';
+  id: Scalars['ID'];
+  item: Item;
+  quantity: Scalars['Int'];
+  unitCostCents: Scalars['Int'];
+};
+
+export type Order = {
+  __typename?: 'Order';
+  id: Scalars['ID'];
+  orderLineItems: Array<OrderLineItem>;
+  totalCostCents: Scalars['Int'];
+  clientSecret: Scalars['String'];
+};
+
 export type Query = {
   __typename?: 'Query';
   items: Array<Item>;
@@ -43,17 +59,11 @@ export type QueryCartArgs = {
   id: Scalars['ID'];
 };
 
-export type CheckOutReply = {
-  __typename?: 'CheckOutReply';
-  clientSecret: Scalars['String'];
-  totalCostCents: Scalars['Int'];
-};
-
 export type Mutation = {
   __typename?: 'Mutation';
-  newCart: Scalars['ID'];
-  addItemToCart: Scalars['ID'];
-  checkoutCart: CheckOutReply;
+  newCart: Cart;
+  addItemToCart?: Maybe<Scalars['Boolean']>;
+  checkoutCart: Order;
 };
 
 
@@ -117,7 +127,10 @@ export type NewCartMutationVariables = Exact<{ [key: string]: never; }>;
 
 export type NewCartMutation = (
   { __typename?: 'Mutation' }
-  & Pick<Mutation, 'newCart'>
+  & { newCart: (
+    { __typename?: 'Cart' }
+    & Pick<Cart, 'id'>
+  ) }
 );
 
 export type CheckoutCartMutationVariables = Exact<{
@@ -128,8 +141,8 @@ export type CheckoutCartMutationVariables = Exact<{
 export type CheckoutCartMutation = (
   { __typename?: 'Mutation' }
   & { checkoutCart: (
-    { __typename?: 'CheckOutReply' }
-    & Pick<CheckOutReply, 'clientSecret' | 'totalCostCents'>
+    { __typename?: 'Order' }
+    & Pick<Order, 'clientSecret' | 'totalCostCents'>
   ) }
 );
 
@@ -244,7 +257,9 @@ export type AddItemToCartMutationResult = ApolloReactCommon.MutationResult<AddIt
 export type AddItemToCartMutationOptions = ApolloReactCommon.BaseMutationOptions<AddItemToCartMutation, AddItemToCartMutationVariables>;
 export const NewCartDocument = gql`
     mutation newCart {
-  newCart
+  newCart {
+    id
+  }
 }
     `;
 export type NewCartMutationFn = ApolloReactCommon.MutationFunction<NewCartMutation, NewCartMutationVariables>;

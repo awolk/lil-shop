@@ -20,7 +20,7 @@ export function useCart() {
     if (!cartID || error) {
       newCart()
         .then(({ data }) => {
-          const cartID = data!.newCart;
+          const cartID = data!.newCart.id;
           localStorage.setItem("cartID", cartID);
           fetchCart({ variables: { id: cartID } });
         })
