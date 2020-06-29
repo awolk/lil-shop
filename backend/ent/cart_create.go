@@ -20,20 +20,6 @@ type CartCreate struct {
 	hooks    []Hook
 }
 
-// SetPaymentIntentID sets the payment_intent_id field.
-func (cc *CartCreate) SetPaymentIntentID(s string) *CartCreate {
-	cc.mutation.SetPaymentIntentID(s)
-	return cc
-}
-
-// SetNillablePaymentIntentID sets the payment_intent_id field if the given value is not nil.
-func (cc *CartCreate) SetNillablePaymentIntentID(s *string) *CartCreate {
-	if s != nil {
-		cc.SetPaymentIntentID(*s)
-	}
-	return cc
-}
-
 // SetID sets the id field.
 func (cc *CartCreate) SetID(u uuid.UUID) *CartCreate {
 	cc.mutation.SetID(u)
@@ -116,14 +102,6 @@ func (cc *CartCreate) sqlSave(ctx context.Context) (*Cart, error) {
 	if id, ok := cc.mutation.ID(); ok {
 		c.ID = id
 		_spec.ID.Value = id
-	}
-	if value, ok := cc.mutation.PaymentIntentID(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: cart.FieldPaymentIntentID,
-		})
-		c.PaymentIntentID = value
 	}
 	if nodes := cc.mutation.LineItemsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

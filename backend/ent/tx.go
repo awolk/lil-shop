@@ -18,6 +18,10 @@ type Tx struct {
 	Item *ItemClient
 	// LineItem is the client for interacting with the LineItem builders.
 	LineItem *LineItemClient
+	// Order is the client for interacting with the Order builders.
+	Order *OrderClient
+	// OrderLineItem is the client for interacting with the OrderLineItem builders.
+	OrderLineItem *OrderLineItemClient
 
 	// lazily loaded.
 	client     *Client
@@ -78,6 +82,8 @@ func (tx *Tx) init() {
 	tx.Cart = NewCartClient(tx.config)
 	tx.Item = NewItemClient(tx.config)
 	tx.LineItem = NewLineItemClient(tx.config)
+	tx.Order = NewOrderClient(tx.config)
+	tx.OrderLineItem = NewOrderLineItemClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

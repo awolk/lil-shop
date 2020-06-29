@@ -5,9 +5,11 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	"github.com/awolk/lil-shop/backend/ent"
 	"github.com/awolk/lil-shop/backend/graph"
@@ -52,11 +54,16 @@ func main() {
 	resolver := &graph.Resolver{
 		Service: service,
 	}
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: resolver}))
+	schema := generated.NewExecutableSchema(generated.Config{Resolvers: resolver})
+	srv := handler.NewDefaultServer(schema)
+	srv.SetErrorPresenter(func(ctx context.Context, err error) *gqlerror.Error {
+		log.Printf("%v", err)
+		return graphql.DefaultErrorPresenter(ctx, err)
+	})
 
 	http.Handle("/playground", playground.Handler("GraphQL playground", "/graphql"))
 	http.Handle("/graphql", srv)
 
-	log.Printf("connect to http://localhost:%s/ for GraphQL playground", config.port)
+	log.Printf("connect to http://localhost:%s/playground for GraphQL playground", config.port)
 	log.Fatal(http.ListenAndServe(":"+config.port, nil))
 }

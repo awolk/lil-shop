@@ -13,6 +13,8 @@ import (
 	"github.com/awolk/lil-shop/backend/ent/cart"
 	"github.com/awolk/lil-shop/backend/ent/item"
 	"github.com/awolk/lil-shop/backend/ent/lineitem"
+	"github.com/awolk/lil-shop/backend/ent/order"
+	"github.com/awolk/lil-shop/backend/ent/orderlineitem"
 
 	"github.com/facebookincubator/ent/dialect"
 	"github.com/facebookincubator/ent/dialect/sql"
@@ -30,6 +32,10 @@ type Client struct {
 	Item *ItemClient
 	// LineItem is the client for interacting with the LineItem builders.
 	LineItem *LineItemClient
+	// Order is the client for interacting with the Order builders.
+	Order *OrderClient
+	// OrderLineItem is the client for interacting with the OrderLineItem builders.
+	OrderLineItem *OrderLineItemClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -46,6 +52,8 @@ func (c *Client) init() {
 	c.Cart = NewCartClient(c.config)
 	c.Item = NewItemClient(c.config)
 	c.LineItem = NewLineItemClient(c.config)
+	c.Order = NewOrderClient(c.config)
+	c.OrderLineItem = NewOrderLineItemClient(c.config)
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -75,10 +83,12 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	}
 	cfg := config{driver: tx, log: c.log, debug: c.debug, hooks: c.hooks}
 	return &Tx{
-		config:   cfg,
-		Cart:     NewCartClient(cfg),
-		Item:     NewItemClient(cfg),
-		LineItem: NewLineItemClient(cfg),
+		config:        cfg,
+		Cart:          NewCartClient(cfg),
+		Item:          NewItemClient(cfg),
+		LineItem:      NewLineItemClient(cfg),
+		Order:         NewOrderClient(cfg),
+		OrderLineItem: NewOrderLineItemClient(cfg),
 	}, nil
 }
 
@@ -93,10 +103,12 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	}
 	cfg := config{driver: &txDriver{tx: tx, drv: c.driver}, log: c.log, debug: c.debug, hooks: c.hooks}
 	return &Tx{
-		config:   cfg,
-		Cart:     NewCartClient(cfg),
-		Item:     NewItemClient(cfg),
-		LineItem: NewLineItemClient(cfg),
+		config:        cfg,
+		Cart:          NewCartClient(cfg),
+		Item:          NewItemClient(cfg),
+		LineItem:      NewLineItemClient(cfg),
+		Order:         NewOrderClient(cfg),
+		OrderLineItem: NewOrderLineItemClient(cfg),
 	}, nil
 }
 
@@ -128,6 +140,8 @@ func (c *Client) Use(hooks ...Hook) {
 	c.Cart.Use(hooks...)
 	c.Item.Use(hooks...)
 	c.LineItem.Use(hooks...)
+	c.Order.Use(hooks...)
+	c.OrderLineItem.Use(hooks...)
 }
 
 // CartClient is a client for the Cart schema.
@@ -425,4 +439,234 @@ func (c *LineItemClient) QueryCart(li *LineItem) *CartQuery {
 // Hooks returns the client hooks.
 func (c *LineItemClient) Hooks() []Hook {
 	return c.hooks.LineItem
+}
+
+// OrderClient is a client for the Order schema.
+type OrderClient struct {
+	config
+}
+
+// NewOrderClient returns a client for the Order from the given config.
+func NewOrderClient(c config) *OrderClient {
+	return &OrderClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `order.Hooks(f(g(h())))`.
+func (c *OrderClient) Use(hooks ...Hook) {
+	c.hooks.Order = append(c.hooks.Order, hooks...)
+}
+
+// Create returns a create builder for Order.
+func (c *OrderClient) Create() *OrderCreate {
+	mutation := newOrderMutation(c.config, OpCreate)
+	return &OrderCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Update returns an update builder for Order.
+func (c *OrderClient) Update() *OrderUpdate {
+	mutation := newOrderMutation(c.config, OpUpdate)
+	return &OrderUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *OrderClient) UpdateOne(o *Order) *OrderUpdateOne {
+	mutation := newOrderMutation(c.config, OpUpdateOne, withOrder(o))
+	return &OrderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *OrderClient) UpdateOneID(id uuid.UUID) *OrderUpdateOne {
+	mutation := newOrderMutation(c.config, OpUpdateOne, withOrderID(id))
+	return &OrderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Order.
+func (c *OrderClient) Delete() *OrderDelete {
+	mutation := newOrderMutation(c.config, OpDelete)
+	return &OrderDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *OrderClient) DeleteOne(o *Order) *OrderDeleteOne {
+	return c.DeleteOneID(o.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *OrderClient) DeleteOneID(id uuid.UUID) *OrderDeleteOne {
+	builder := c.Delete().Where(order.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &OrderDeleteOne{builder}
+}
+
+// Create returns a query builder for Order.
+func (c *OrderClient) Query() *OrderQuery {
+	return &OrderQuery{config: c.config}
+}
+
+// Get returns a Order entity by its id.
+func (c *OrderClient) Get(ctx context.Context, id uuid.UUID) (*Order, error) {
+	return c.Query().Where(order.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *OrderClient) GetX(ctx context.Context, id uuid.UUID) *Order {
+	o, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return o
+}
+
+// QueryOrderLineItems queries the order_line_items edge of a Order.
+func (c *OrderClient) QueryOrderLineItems(o *Order) *OrderLineItemQuery {
+	query := &OrderLineItemQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := o.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(order.Table, order.FieldID, id),
+			sqlgraph.To(orderlineitem.Table, orderlineitem.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, order.OrderLineItemsTable, order.OrderLineItemsColumn),
+		)
+		fromV = sqlgraph.Neighbors(o.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *OrderClient) Hooks() []Hook {
+	return c.hooks.Order
+}
+
+// OrderLineItemClient is a client for the OrderLineItem schema.
+type OrderLineItemClient struct {
+	config
+}
+
+// NewOrderLineItemClient returns a client for the OrderLineItem from the given config.
+func NewOrderLineItemClient(c config) *OrderLineItemClient {
+	return &OrderLineItemClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `orderlineitem.Hooks(f(g(h())))`.
+func (c *OrderLineItemClient) Use(hooks ...Hook) {
+	c.hooks.OrderLineItem = append(c.hooks.OrderLineItem, hooks...)
+}
+
+// Create returns a create builder for OrderLineItem.
+func (c *OrderLineItemClient) Create() *OrderLineItemCreate {
+	mutation := newOrderLineItemMutation(c.config, OpCreate)
+	return &OrderLineItemCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Update returns an update builder for OrderLineItem.
+func (c *OrderLineItemClient) Update() *OrderLineItemUpdate {
+	mutation := newOrderLineItemMutation(c.config, OpUpdate)
+	return &OrderLineItemUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *OrderLineItemClient) UpdateOne(oli *OrderLineItem) *OrderLineItemUpdateOne {
+	mutation := newOrderLineItemMutation(c.config, OpUpdateOne, withOrderLineItem(oli))
+	return &OrderLineItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *OrderLineItemClient) UpdateOneID(id uuid.UUID) *OrderLineItemUpdateOne {
+	mutation := newOrderLineItemMutation(c.config, OpUpdateOne, withOrderLineItemID(id))
+	return &OrderLineItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for OrderLineItem.
+func (c *OrderLineItemClient) Delete() *OrderLineItemDelete {
+	mutation := newOrderLineItemMutation(c.config, OpDelete)
+	return &OrderLineItemDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *OrderLineItemClient) DeleteOne(oli *OrderLineItem) *OrderLineItemDeleteOne {
+	return c.DeleteOneID(oli.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *OrderLineItemClient) DeleteOneID(id uuid.UUID) *OrderLineItemDeleteOne {
+	builder := c.Delete().Where(orderlineitem.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &OrderLineItemDeleteOne{builder}
+}
+
+// Create returns a query builder for OrderLineItem.
+func (c *OrderLineItemClient) Query() *OrderLineItemQuery {
+	return &OrderLineItemQuery{config: c.config}
+}
+
+// Get returns a OrderLineItem entity by its id.
+func (c *OrderLineItemClient) Get(ctx context.Context, id uuid.UUID) (*OrderLineItem, error) {
+	return c.Query().Where(orderlineitem.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *OrderLineItemClient) GetX(ctx context.Context, id uuid.UUID) *OrderLineItem {
+	oli, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return oli
+}
+
+// QueryItem queries the item edge of a OrderLineItem.
+func (c *OrderLineItemClient) QueryItem(oli *OrderLineItem) *ItemQuery {
+	query := &ItemQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := oli.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(orderlineitem.Table, orderlineitem.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, orderlineitem.ItemTable, orderlineitem.ItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(oli.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOrder queries the order edge of a OrderLineItem.
+func (c *OrderLineItemClient) QueryOrder(oli *OrderLineItem) *OrderQuery {
+	query := &OrderQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := oli.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(orderlineitem.Table, orderlineitem.FieldID, id),
+			sqlgraph.To(order.Table, order.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, orderlineitem.OrderTable, orderlineitem.OrderColumn),
+		)
+		fromV = sqlgraph.Neighbors(oli.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOriginalLineItem queries the original_line_item edge of a OrderLineItem.
+func (c *OrderLineItemClient) QueryOriginalLineItem(oli *OrderLineItem) *LineItemQuery {
+	query := &LineItemQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := oli.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(orderlineitem.Table, orderlineitem.FieldID, id),
+			sqlgraph.To(lineitem.Table, lineitem.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, orderlineitem.OriginalLineItemTable, orderlineitem.OriginalLineItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(oli.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *OrderLineItemClient) Hooks() []Hook {
+	return c.hooks.OrderLineItem
 }

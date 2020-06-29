@@ -15,21 +15,28 @@ type Cart {
   lineItems: [LineItem!]!
 }
 
+type OrderLineItem {
+  id: ID!
+  item: Item!
+  quantity: Int!
+  unitCostCents: Int!
+}
+
+type Order {
+  id: ID!
+  orderLineItems: [OrderLineItem!]!
+  totalCostCents: Int!
+  clientSecret: String!
+}
+
 type Query {
   items: [Item!]!
   cart(id: ID!): Cart!
 }
 
-type CheckOutReply {
-  clientSecret: String!
-  totalCostCents: Int!
-}
-
 type Mutation {
-  # returns new cart ID
-  newCart: ID!
-  # returns line item ID
-  addItemToCart(itemID: ID!, quantity: Int!, cartID: ID!): ID!
-  # returns payment intent client secret
-  checkoutCart(cartID: ID!): CheckOutReply!
+  newCart: Cart!
+  # no return value
+  addItemToCart(itemID: ID!, quantity: Int!, cartID: ID!): Boolean
+  checkoutCart(cartID: ID!): Order!
 }

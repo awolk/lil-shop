@@ -7,21 +7,22 @@ import (
 	"github.com/google/uuid"
 )
 
-// Cart holds the schema definition for the Cart entity.
-type Cart struct {
+// Order holds the schema definition for the Order entity.
+type Order struct {
 	ent.Schema
 }
 
-// Fields of the Cart.
-func (Cart) Fields() []ent.Field {
+// Fields of the Order.
+func (Order) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New),
+		field.String("payment_intent_id"),
 	}
 }
 
-// Edges of the Cart.
-func (Cart) Edges() []ent.Edge {
+// Edges of the Order.
+func (Order) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("line_items", LineItem.Type),
+		edge.To("order_line_items", OrderLineItem.Type),
 	}
 }

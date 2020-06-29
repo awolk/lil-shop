@@ -48,6 +48,32 @@ func (f LineItemFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, er
 	return f(ctx, mv)
 }
 
+// The OrderFunc type is an adapter to allow the use of ordinary
+// function as Order mutator.
+type OrderFunc func(context.Context, *ent.OrderMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OrderFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.OrderMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OrderMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The OrderLineItemFunc type is an adapter to allow the use of ordinary
+// function as OrderLineItem mutator.
+type OrderLineItemFunc func(context.Context, *ent.OrderLineItemMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OrderLineItemFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.OrderLineItemMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OrderLineItemMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // On executes the given hook only of the given operation.
 //
 //	hook.On(Log, ent.Delete|ent.Create)

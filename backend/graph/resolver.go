@@ -8,6 +8,7 @@ import "github.com/awolk/lil-shop/backend/service"
 //
 // It serves as dependency injection for your app, add any dependencies you require here.
 
+// Resolver holds dependencies for the GraphQL resolvers
 type Resolver struct {
 	Service *service.Service
 }

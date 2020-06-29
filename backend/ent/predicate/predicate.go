@@ -14,3 +14,9 @@ type Item func(*sql.Selector)
 
 // LineItem is the predicate function for lineitem builders.
 type LineItem func(*sql.Selector)
+
+// Order is the predicate function for order builders.
+type Order func(*sql.Selector)
+
+// OrderLineItem is the predicate function for orderlineitem builders.
+type OrderLineItem func(*sql.Selector)

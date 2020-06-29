@@ -281,3 +281,51 @@ func (f LineItemMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutati
 	}
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.LineItemMutation", m)
 }
+
+// The OrderQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type OrderQueryRuleFunc func(context.Context, *ent.OrderQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f OrderQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.OrderQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.OrderQuery", q)
+}
+
+// The OrderMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type OrderMutationRuleFunc func(context.Context, *ent.OrderMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f OrderMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.OrderMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.OrderMutation", m)
+}
+
+// The OrderLineItemQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type OrderLineItemQueryRuleFunc func(context.Context, *ent.OrderLineItemQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f OrderLineItemQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.OrderLineItemQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.OrderLineItemQuery", q)
+}
+
+// The OrderLineItemMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type OrderLineItemMutationRuleFunc func(context.Context, *ent.OrderLineItemMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f OrderLineItemMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.OrderLineItemMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.OrderLineItemMutation", m)
+}

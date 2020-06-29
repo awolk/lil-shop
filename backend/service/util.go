@@ -7,13 +7,26 @@ import (
 	"github.com/awolk/lil-shop/backend/ent"
 )
 
-func (s *Service) withTx(ctx context.Context, fn func(tx *ent.Tx) error) error {
-	tx, err := s.client.Tx(ctx)
+type txClientKey struct{}
+
+func (s *Service) client(ctx context.Context) *ent.Client {
+	txClient := ctx.Value(txClientKey{})
+	if txClient != nil {
+		return txClient.(*ent.Client)
+	}
+
+	return s.globalClient
+}
+
+func (s *Service) withTx(ctx context.Context, fn func(ctx context.Context) error) error {
+	tx, err := s.globalClient.Tx(ctx)
 	if err != nil {
 		return fmt.Errorf("failed starting transaction: %w", err)
 	}
 
-	if err := fn(tx); err != nil {
+	ctxWithTx := context.WithValue(ctx, txClientKey{}, tx.Client())
+
+	if err := fn(ctxWithTx); err != nil {
 		err := fmt.Errorf("failed executing transaction: %w", err)
 
 		rerr := tx.Rollback()

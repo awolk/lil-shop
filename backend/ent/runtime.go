@@ -6,6 +6,8 @@ import (
 	"github.com/awolk/lil-shop/backend/ent/cart"
 	"github.com/awolk/lil-shop/backend/ent/item"
 	"github.com/awolk/lil-shop/backend/ent/lineitem"
+	"github.com/awolk/lil-shop/backend/ent/order"
+	"github.com/awolk/lil-shop/backend/ent/orderlineitem"
 	"github.com/awolk/lil-shop/backend/ent/schema"
 	"github.com/google/uuid"
 )
@@ -40,4 +42,28 @@ func init() {
 	lineitemDescID := lineitemFields[0].Descriptor()
 	// lineitem.DefaultID holds the default value on creation for the id field.
 	lineitem.DefaultID = lineitemDescID.Default.(func() uuid.UUID)
+	orderFields := schema.Order{}.Fields()
+	_ = orderFields
+	// orderDescID is the schema descriptor for id field.
+	orderDescID := orderFields[0].Descriptor()
+	// order.DefaultID holds the default value on creation for the id field.
+	order.DefaultID = orderDescID.Default.(func() uuid.UUID)
+	orderlineitemFields := schema.OrderLineItem{}.Fields()
+	_ = orderlineitemFields
+	// orderlineitemDescQuantity is the schema descriptor for quantity field.
+	orderlineitemDescQuantity := orderlineitemFields[1].Descriptor()
+	// orderlineitem.QuantityValidator is a validator for the "quantity" field. It is called by the builders before save.
+	orderlineitem.QuantityValidator = orderlineitemDescQuantity.Validators[0].(func(int) error)
+	// orderlineitemDescUnitCostCents is the schema descriptor for unit_cost_cents field.
+	orderlineitemDescUnitCostCents := orderlineitemFields[2].Descriptor()
+	// orderlineitem.UnitCostCentsValidator is a validator for the "unit_cost_cents" field. It is called by the builders before save.
+	orderlineitem.UnitCostCentsValidator = orderlineitemDescUnitCostCents.Validators[0].(func(int) error)
+	// orderlineitemDescCompleted is the schema descriptor for completed field.
+	orderlineitemDescCompleted := orderlineitemFields[3].Descriptor()
+	// orderlineitem.DefaultCompleted holds the default value on creation for the completed field.
+	orderlineitem.DefaultCompleted = orderlineitemDescCompleted.Default.(bool)
+	// orderlineitemDescID is the schema descriptor for id field.
+	orderlineitemDescID := orderlineitemFields[0].Descriptor()
+	// orderlineitem.DefaultID holds the default value on creation for the id field.
+	orderlineitem.DefaultID = orderlineitemDescID.Default.(func() uuid.UUID)
 }

@@ -36,6 +36,7 @@ resolver:
 # if they match it will use them, otherwise it will generate them.
 autobind:
   - "github.com/awolk/lil-shop/backend/graph/model"
+  - "github.com/awolk/lil-shop/backend/ent"
 
 # This section declares type mapping between the GraphQL and go type systems
 #
@@ -49,6 +50,7 @@ models:
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
+      - github.com/awolk/lil-shop/backend/graph/model.UUID
   Int:
     model:
       - github.com/99designs/gqlgen/graphql.Int

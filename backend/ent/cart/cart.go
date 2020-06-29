@@ -11,8 +11,6 @@ const (
 	Label = "cart"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldPaymentIntentID holds the string denoting the payment_intent_id field in the database.
-	FieldPaymentIntentID = "payment_intent_id"
 
 	// EdgeLineItems holds the string denoting the line_items edge name in mutations.
 	EdgeLineItems = "line_items"
@@ -31,7 +29,6 @@ const (
 // Columns holds all SQL columns for cart fields.
 var Columns = []string{
 	FieldID,
-	FieldPaymentIntentID,
 }
 
 var (
