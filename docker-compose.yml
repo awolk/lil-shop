@@ -19,6 +19,17 @@ services:
       - "/go/pkg/mod/cache"
     environment:
       - STRIPE_SECRET_KEY
+      - DB_URI=postgres://lilshopuser:lilshoppass@postgres/lilshopdb?sslmode=disable
+    depends_on:
+      - postgres
+  postgres:
+    image: postgres:13
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=lilshopuser
+      - POSTGRES_PASSWORD=lilshoppass
+      - POSTGRES_DB=lilshopdb
   proxy:
     image: nginx:1.19-alpine
     volumes:
@@ -28,3 +39,5 @@ services:
     depends_on:
       - frontend
       - backend
+volumes:
+  dbdata:

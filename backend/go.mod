@@ -7,6 +7,7 @@ require (
 	github.com/facebookincubator/ent v0.2.5
 	github.com/google/uuid v1.1.1
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
+	github.com/lib/pq v1.2.0
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/mitchellh/mapstructure v1.3.2 // indirect
 	github.com/stripe/stripe-go v70.15.0+incompatible
