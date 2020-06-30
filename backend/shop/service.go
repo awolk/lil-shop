@@ -1,4 +1,4 @@
-package service
+package shop
 
 import (
 	"context"
@@ -17,11 +17,11 @@ import (
 // Service handles shop business logic
 type Service struct {
 	globalClient    *ent.Client
-	paymentsService *payments.PaymentsService
+	paymentsService *payments.Service
 }
 
-// New constructs a new Service
-func New(client *ent.Client, paymentsService *payments.PaymentsService) *Service {
+// New constructs a new shop Service
+func New(client *ent.Client, paymentsService *payments.Service) *Service {
 	return &Service{
 		globalClient:    client,
 		paymentsService: paymentsService,

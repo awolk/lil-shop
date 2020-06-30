@@ -8,10 +8,12 @@ import (
 	"github.com/stripe/stripe-go/client"
 )
 
-type PaymentsService struct {
+// Service abstracts payment collection
+type Service struct {
 	client *client.API
 }
 
+// PaymentIntent is a planned payment through Stripe
 type PaymentIntent struct {
 	ID           string
 	ClientSecret string
@@ -24,15 +26,17 @@ func mapPaymentIntent(pi *stripe.PaymentIntent) *PaymentIntent {
 	}
 }
 
-func New(stripePrivateKey string) *PaymentsService {
+// New constructs a new payments Service
+func New(stripePrivateKey string) *Service {
 	client := client.New(stripePrivateKey, nil)
 
-	return &PaymentsService{
+	return &Service{
 		client,
 	}
 }
 
-func (s *PaymentsService) NewPaymentIntent(ctx context.Context, costCents int) (*PaymentIntent, error) {
+// NewPaymentIntent creates a new payment intent with stripe
+func (s *Service) NewPaymentIntent(ctx context.Context, costCents int) (*PaymentIntent, error) {
 	params := &stripe.PaymentIntentParams{
 		Params:   stripe.Params{Context: ctx},
 		Amount:   stripe.Int64(int64(costCents)),
@@ -47,7 +51,8 @@ func (s *PaymentsService) NewPaymentIntent(ctx context.Context, costCents int) (
 	return mapPaymentIntent(pi), nil
 }
 
-func (s *PaymentsService) UpdatePaymentIntent(ctx context.Context, id string, costCents int) (*PaymentIntent, error) {
+// UpdatePaymentIntent changes the cost of a given payment intent
+func (s *Service) UpdatePaymentIntent(ctx context.Context, id string, costCents int) (*PaymentIntent, error) {
 	params := &stripe.PaymentIntentParams{
 		Params: stripe.Params{Context: ctx},
 		Amount: stripe.Int64(int64(costCents)),
@@ -61,7 +66,8 @@ func (s *PaymentsService) UpdatePaymentIntent(ctx context.Context, id string, co
 	return mapPaymentIntent(pi), nil
 }
 
-func (s *PaymentsService) GetPaymentIntent(ctx context.Context, id string) (*PaymentIntent, error) {
+// GetPaymentIntent fetches a payment intent from Stripe given its ID
+func (s *Service) GetPaymentIntent(ctx context.Context, id string) (*PaymentIntent, error) {
 	params := &stripe.PaymentIntentParams{
 		Params: stripe.Params{Context: ctx},
 	}

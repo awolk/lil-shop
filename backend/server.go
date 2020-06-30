@@ -15,8 +15,8 @@ import (
 	"github.com/awolk/lil-shop/backend/graph"
 	"github.com/awolk/lil-shop/backend/graph/generated"
 	"github.com/awolk/lil-shop/backend/payments"
-	"github.com/awolk/lil-shop/backend/service"
-	"github.com/awolk/lil-shop/backend/webhooks"
+	"github.com/awolk/lil-shop/backend/shop"
+	"github.com/awolk/lil-shop/backend/webhook"
 )
 
 func main() {
@@ -40,20 +40,20 @@ func main() {
 
 	// construct services
 	paymentService := payments.New(config.stripePrivateKey)
-	service := service.New(client, paymentService)
+	shopService := shop.New(client, paymentService)
 
-	_, err = service.NewItem(context.Background(), "Sunglasses", 1099)
+	_, err = shopService.NewItem(context.Background(), "Sunglasses", 1099)
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, err = service.NewItem(context.Background(), "Apple", 199)
+	_, err = shopService.NewItem(context.Background(), "Apple", 199)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// start server
 	resolver := &graph.Resolver{
-		Service: service,
+		Service: shopService,
 	}
 	schema := generated.NewExecutableSchema(generated.Config{Resolvers: resolver})
 	srv := handler.NewDefaultServer(schema)
@@ -64,7 +64,7 @@ func main() {
 
 	http.Handle("/playground", playground.Handler("GraphQL playground", "/graphql"))
 	http.Handle("/graphql", srv)
-	http.Handle("/webhook", webhooks.New(service, config.stripeEndpointSecret))
+	http.Handle("/webhook", webhook.New(shopService, config.stripeEndpointSecret))
 
 	log.Printf("connect to http://localhost:%s/playground for GraphQL playground", config.port)
 	log.Fatal(http.ListenAndServe(":"+config.port, nil))

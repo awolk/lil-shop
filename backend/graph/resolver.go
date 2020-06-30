@@ -1,6 +1,6 @@
 package graph
 
-import "github.com/awolk/lil-shop/backend/service"
+import "github.com/awolk/lil-shop/backend/shop"
 
 //go:generate go run github.com/99designs/gqlgen
 
@@ -10,5 +10,5 @@ import "github.com/awolk/lil-shop/backend/service"
 
 // Resolver holds dependencies for the GraphQL resolvers
 type Resolver struct {
-	Service *service.Service
+	Service *shop.Service
 }

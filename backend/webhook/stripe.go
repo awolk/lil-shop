@@ -1,4 +1,4 @@
-package webhooks
+package webhook
 
 import (
 	"context"
@@ -8,26 +8,26 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/awolk/lil-shop/backend/service"
+	"github.com/awolk/lil-shop/backend/shop"
 	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/webhook"
 )
 
-// WebhookHandler is an HTTP handler for stripe webhooks
-type WebhookHandler struct {
-	s              *service.Service
+// Handler is an HTTP handler for stripe webhooks
+type Handler struct {
+	s              *shop.Service
 	endpointSecret string
 }
 
-// New constructs a new WebhookHandler
-func New(s *service.Service, endpointSecret string) *WebhookHandler {
-	return &WebhookHandler{
+// New constructs a new Handler
+func New(s *shop.Service, endpointSecret string) *Handler {
+	return &Handler{
 		s:              s,
 		endpointSecret: endpointSecret,
 	}
 }
 
-func (h *WebhookHandler) handlePaymentIntentSucceeded(ctx context.Context, pi *stripe.PaymentIntent) error {
+func (h *Handler) handlePaymentIntentSucceeded(ctx context.Context, pi *stripe.PaymentIntent) error {
 	err := h.s.CompleteOrder(ctx, pi.ID)
 	if err != nil {
 		return fmt.Errorf("failed to complete order: %v", err)
@@ -35,12 +35,12 @@ func (h *WebhookHandler) handlePaymentIntentSucceeded(ctx context.Context, pi *s
 	return nil
 }
 
-func (h *WebhookHandler) handlePaymentIntentFailed(ctx context.Context, pi *stripe.PaymentIntent) error {
+func (h *Handler) handlePaymentIntentFailed(ctx context.Context, pi *stripe.PaymentIntent) error {
 	log.Printf("order failed: %v", pi.LastPaymentError)
 	return nil
 }
 
-func (h *WebhookHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	const MaxBodyBytes = int64(65536)
 	req.Body = http.MaxBytesReader(w, req.Body, MaxBodyBytes)
 	payload, err := ioutil.ReadAll(req.Body)
